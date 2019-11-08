@@ -9,13 +9,13 @@ with open('requirements.txt', "r") as fh:
     requirements = fh.read().split("\n")
 
 setuptools.setup(
-    name="TimeAxis",
+    name="AxisUtilities",
     version=__version__,
-    author="Mohammad ABouali",
+    author="Mohammad Abouali",
     author_email="maboualidev@gmail.com",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/maboualidev/TimeAxis",
+    url="https://github.com/coderepocenter/AxisUtilities.git",
     packages=setuptools.find_packages(),
     install_requires=requirements,
     classifiers=[

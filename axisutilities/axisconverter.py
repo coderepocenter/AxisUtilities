@@ -11,11 +11,11 @@ from axisutilities import Axis
 
 class AxisConverter:
     def __init__(self, **kwargs) -> None:
-        if ("from_time_axis" in kwargs) and ("to_time_axis" in kwargs):
-            from_ta = kwargs["from_time_axis"]
-            to_ta = kwargs["to_time_axis"]
+        if ("from_axis" in kwargs) and ("to_axis" in kwargs):
+            from_ta = kwargs["from_axis"]
+            to_ta = kwargs["to_axis"]
             if not (isinstance(from_ta, Axis) and isinstance(to_ta, Axis)):
-                raise TypeError("provided from/to_time_axis must be of type TimeAxis.")
+                raise TypeError("provided from/to_axis must be of type TimeAxis.")
 
             self._m = to_ta.nelem
             self._n = from_ta.nelem
@@ -50,19 +50,19 @@ class AxisConverter:
         pass
 
     @property
-    def from_time_axis(self):
+    def from_axis(self):
         return self._from_ta
 
-    @from_time_axis.setter
-    def from_time_axis(self, v):
+    @from_axis.setter
+    def from_axis(self, v):
         pass
 
     @property
-    def to_time_axis(self):
+    def to_axis(self):
         return self._to_ta
 
-    @to_time_axis.setter
-    def to_time_axis(self, v):
+    @to_axis.setter
+    def to_axis(self, v):
         pass
 
     def _prep_input_data(self, in_data: Iterable, time_dimension) -> (np.ndarray, tuple):

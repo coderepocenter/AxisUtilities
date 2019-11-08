@@ -19,7 +19,7 @@ from axisutilities import __version__
 
 # -- Project information -----------------------------------------------------
 
-project = 'TimeAxis'
+project = 'AxisUtilities'
 copyright = '2019, Mohammad Abouali'
 author = 'Mohammad Abouali'
 

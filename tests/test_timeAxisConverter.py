@@ -87,7 +87,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
     def test_average_01(self):
         from_axis = DailyTimeAxisBuilder()\
@@ -100,7 +100,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = [1, 2, 3, 4, 5, 6, 7]
 
@@ -119,7 +119,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = [4.0]
 
@@ -141,7 +141,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.asarray([1, 2, 3, 4, 5, 6, 7])
 
@@ -160,7 +160,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -180,7 +180,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(14) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = [4.0, 11]
 
@@ -200,7 +200,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 0)
 
@@ -229,7 +229,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14))
 
@@ -258,7 +258,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1)
 
@@ -287,7 +287,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -316,7 +316,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -338,7 +338,7 @@ class TestTimeAxisConverter(TestCase):
             window_size=7
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -359,7 +359,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
         from_data[2] = np.nan
@@ -380,7 +380,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -400,7 +400,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 0).tolist()
 
@@ -428,7 +428,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -457,7 +457,7 @@ class TestTimeAxisConverter(TestCase):
             window_size=7
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -481,7 +481,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -502,7 +502,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -522,7 +522,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 0).tolist()
 
@@ -550,7 +550,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -579,7 +579,7 @@ class TestTimeAxisConverter(TestCase):
             window_size=7
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -603,7 +603,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -626,7 +626,7 @@ class TestTimeAxisConverter(TestCase):
             end_year=2019
         ).build()
 
-        tc = AxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.random.random((from_axis.nelem, 100, 100))
 
