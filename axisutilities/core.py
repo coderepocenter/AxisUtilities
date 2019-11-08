@@ -82,6 +82,65 @@ class Interval:
 
 
 class Axis:
+    """
+    Defines a one dimensional axis. Each element of axis is defined by three components:
+
+    - lower bound
+    - upper bound
+    - data_tick
+
+    For example, you could have a daily axis. Each entry is referring to one day; hence, the lower bound would be
+    mid-night of that day, let's say, `2019-11-01 00:00:00` and the upper bound would be the mid-night of the next day,
+    or in this example: `2019-11-02 00:00:00`. The data tick defines where in the interval are you associating the
+    value. In some calculations this data tick is needed.
+
+    There are multiple way of creating an axis:
+    - Using Axis Object directly, or
+    - Using one of the builder functions that are provided. These builder functions provide an easier way to create
+    some well-known axis.
+
+    For example, to create a 7 day daily time axis, you could either calculate the upper bound and lower bound along
+    with other information and pass it to `Axis` initializer, or you could use `DailyTimeAxisBuilder` class which
+    essentially you pass start day and number of days (or end day) and it creates an `Axis` by assigning proper lower
+    and upper bound.
+
+    **Note**: Although many of the examples here are creating a time axis; you are not limited to only that. Essentially
+    any one dimensional axis is accepted.
+
+    Examples:
+        * Creating an Axis by passing lower/upper bound and data tick:
+        >>> from axisutilities import Axis
+        >>> lower_bound = [i * 24 for i in range(7)]
+        >>> lower_bound
+        [0, 24, 48, 72, 96, 120, 144]
+        >>> upper_bound = [lower_bound[i] + 24 for i in range(7)]
+        >>> upper_bound
+        [24, 48, 72, 96, 120, 144, 168]
+        >>> # Note that data ticks are converted to int. Any number yo pass is converted to int. so, if your
+        ... # lower/upper/data_tick has fraction, you must first convert them to int properly. Otherwise,
+        ... # you are loosing the fraction and you may get unexpected results or behavior.
+        >>> data_ticks = [int(0.5*(lower_bound[i] + upper_bound[i])) for i in range(7)]
+        >>> data_ticks
+        [12, 36, 60, 84, 108, 132, 156]
+        >>> axis = Axis(lower_bound=lower_bound,
+        ...             upper_bound=upper_bound,
+        ...             data_ticks=data_ticks)
+        >>> axis
+        <timeaxis.TimeAxis>
+
+          > nelem:
+            7
+          > lower_bound:
+            [0 ... 144]
+          > upper_bound:
+            [24 ... 168]
+          > data_ticks:
+            [12 ... 156]
+          > fraction:
+            [0.5 ... 0.5]
+          > binding:
+            middle
+    """
     def __init__(self,  lower_bound: Iterable[float],
                         upper_bound: Iterable[float],
                         **kwargs):
@@ -164,9 +223,9 @@ class Axis:
         output = self.asDict()
         for key, value in output.items():
             if key in {"binding", "nelem"}:
-                v = f"  > {key}:\n\t{value}\n"
+                v = f"  > {key}:\n\t{value}"
             else:
-                v = f"  > {key}:\n\t[{value[0]} ... {value[-1]}]\n"
+                v = f"  > {key}:\n\t[{value[0]} ... {value[-1]}]"
             summary.append(v)
         return "\n".join(summary)
 
