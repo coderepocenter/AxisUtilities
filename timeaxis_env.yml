@@ -1,0 +1,7 @@
+name: TimeAxis
+channels:
+  - defaults
+dependencies:
+  - numpy
+  - cftime
+  - scipy
