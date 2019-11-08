@@ -1,6 +1,5 @@
-[![CircleCI](https://circleci.com/gh/maboualidev/TimeAxis.svg?style=svg)](https://circleci.com/gh/maboualidev/TimeAxis)
-[![codecov](https://codecov.io/gh/maboualidev/TimeAxis/branch/master/graph/badge.svg)](https://codecov.io/gh/maboualidev/TimeAxis)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3530859.svg)](https://doi.org/10.5281/zenodo.3530859)
+[![CircleCI](https://circleci.com/gh/coderepocenter/AxisUtilities.svg?style=svg)](https://circleci.com/gh/coderepocenter/AxisUtilities)
+[![codecov](https://codecov.io/gh/coderepocenter/AxisUtilities/branch/master/graph/badge.svg)](https://codecov.io/gh/coderepocenter/AxisUtilities)
 
 
 
