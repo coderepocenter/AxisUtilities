@@ -1,5 +1,5 @@
 package:
-  name: timeaxis
+  name: axisUtilities
   version: '19.10.0'
 
 source:
@@ -16,4 +16,4 @@ requirements:
   run:
     - python
 about:
-  summary: Manages TimeAxis and provides some utilities
+  summary: Manages Axis and provides some utilities

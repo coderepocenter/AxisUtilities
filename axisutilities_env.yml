@@ -1,7 +1,8 @@
-name: TimeAxis
+name: AxisUtilities
 channels:
   - defaults
 dependencies:
   - numpy
   - cftime
   - scipy
+  - numba

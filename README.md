@@ -4,7 +4,7 @@
 
 
 
-# TimeAxis
+# Axis Utilities
 Manages Time Axis and different operations related to time. Main focus is on Earth Science Data.
 The main goal of this package is to provide a unified mechanism to convert/transform date from 
 time axis to another. For example, if your original data set is on a daily basis, and you want 
@@ -19,7 +19,7 @@ converted from the original time axis to the provided destination time axis.
 as usual, you could use `pip` installation as follows:
 
 ```shell script
-pip install timeaxis
+pip install axisutilities
 ```
 
 # Examples:
@@ -47,9 +47,9 @@ to_axis = WeeklyTimeAxisBuilder(
 now we create a time axis converter object, as follows:
 
 ```python
-tc = TimeAxisConverter(
-    from_time_axis=from_axis, 
-    to_time_axis=to_axis
+tc = AxisConverter(
+    from_axis=from_axis, 
+    to_axis=to_axis
 )
 ```
 
@@ -84,7 +84,7 @@ to_axis = RollingWindowTimeAxisBuilder(
     window_size=7
 ).build()
 
-tc = TimeAxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+tc = TimeAxisConverter(from_axis=from_axis, to_axis=to_axis)
 
 to_data = tc.average(from_data)
 ```
@@ -110,7 +110,7 @@ to_axis = MonthlyTimeAxisBuilder(
     end_year=2019,
 ).build()
 
-tc = TimeAxisConverter(from_time_axis=from_axis, to_time_axis=to_axis)
+tc = TimeAxisConverter(from_axis=from_axis, to_axis=to_axis)
 monthly_avg = tc.average(daily_data)
 ```
 
