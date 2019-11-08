@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = axisutilities
+omit =
+    axisutilities/__init__.py
+    axisutilities/_version.py
