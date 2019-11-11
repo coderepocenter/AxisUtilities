@@ -109,6 +109,7 @@ class Axis:
 
     Examples:
         * Creating an Axis by passing lower/upper bound and data tick:
+
         >>> from axisutilities import Axis
         >>> lower_bound = [i * 24 for i in range(7)]
         >>> lower_bound
@@ -125,21 +126,55 @@ class Axis:
         >>> axis = Axis(lower_bound=lower_bound,
         ...             upper_bound=upper_bound,
         ...             data_ticks=data_ticks)
-        >>> axis
-        <timeaxis.TimeAxis>
 
-          > nelem:
-            7
-          > lower_bound:
-            [0 ... 144]
-          > upper_bound:
-            [24 ... 168]
-          > data_ticks:
-            [12 ... 156]
-          > fraction:
-            [0.5 ... 0.5]
-          > binding:
-            middle
+        * Creating axis by passing upper/lower bound and defining the fraction: The following example is essentially the
+        same as before, except that instead of manually defining the data ticks to be in the middle of (between) upper
+        and lower bound we pass the fraction as 0.5 and the data ticks are calculated accordingly.
+
+        >>> from axisutilities import Axis
+        >>> lower_bound = [i * 24 for i in range(7)]
+        >>> upper_bound = [lower_bound[i] + 24 for i in range(7)]
+        >>> axis = Axis(lower_bound=lower_bound,
+        ...             upper_bound=upper_bound,
+        ...             fraction=0.5)
+
+        * Creating axis by passing upper/lower bound and defining the bindings: If the data ticks are at the beginning,
+        end or in the middle of the interval, instead of passing fraction as 0, 1, or 0.5, the alternative approach is
+        to pass the binding by name:
+
+        >>> axis = Axis(lower_bound=lower_bound,
+        ...             upper_bound=upper_bound,
+        ...             binding="middle")
+
+        or
+
+        >>> axis = Axis(lower_bound=lower_bound,
+        ...             upper_bound=upper_bound,
+        ...             binding="end")
+
+        * Creating axis using variable fraction: The fraction does not need to be the same for all data ticks and
+        it can change from one data element to another.
+
+        >>> from numpy.random import random
+        >>> fraction = random(7)
+        >>> axis = Axis(lower_bound=lower_bound,
+        ...             upper_bound=upper_bound,
+        ...             fraction=fraction)
+
+        * creating axis using one of the builder functions: There are numerous builder function that you could harness
+        to quickly build your axis object. For example, to create a daily time axis for one year, instead of calculating
+        and providing the upper and lower bounds manually, you could do:
+
+        >>> from datetime import date
+        >>> from axisutilities import DailyTimeAxisBuilder
+        >>> axis = DailyTimeAxisBuilder(
+        ...     start_date=date(2019,1,1),
+        ...     end_date=date(2020,1,1)).build()
+        >>> axis.nelem
+        365
+
+        Don't forget to call the `.build()` when using one of these builder functions.
+
     """
     def __init__(self,  lower_bound: Iterable[float],
                         upper_bound: Iterable[float],
@@ -192,10 +227,14 @@ class Axis:
                 self._bounds[1, :],
                 self._data_ticks
             )
+
             self._binding = Axis._get_binding(self._fraction)
+
 
         if "binding" in kwargs:
             self._binding = AxisBinding.valueOf(kwargs["binding"])
+            if self._binding == AxisBinding.CUSTOM_FRACTION:
+                raise ValueError("Can't guess the fraction for the Custom Fraction. Use the fraction option instead.")
             self._fraction = np.asarray(self._binding.fraction(), dtype="float64").reshape((1, -1))
             self._data_ticks = Axis._calculate_data_ticks_fromFraction(
                 self._bounds[0, :],
@@ -203,7 +242,23 @@ class Axis:
                 self._fraction
             )
 
+        if self._binding in (AxisBinding.BEGINNING, AxisBinding.MIDDLE, AxisBinding.END):
+            self._fraction = np.asarray([self._fraction[0][0]], dtype="float64").reshape((1, -1))
+
     def asDict(self) -> Dict:
+        """
+        returns the current axis object as a python dictionary.
+        :return: a dictionary representing the current axis.
+
+        examples:
+            * Converting to Dictionary:
+            >>> axis.asDict()
+            {'nelem': 7, 'lower_bound': [0, 24, 48, 72, 96, 120, 144],
+            'upper_bound': [24, 48, 72, 96, 120, 144, 168],
+            'data_ticks': [12, 36, 60, 84, 108, 132, 156],
+            'fraction': [0.5],
+            'binding': 'middle'}
+        """
         out = {
             "nelem": self.nelem,
             "lower_bound": self._bounds[0, :].tolist(),
@@ -215,8 +270,59 @@ class Axis:
 
         return out
 
+    @staticmethod
+    def fromDict(input: dict) -> Axis:
+        if "upper_bound" in input:
+            upper_bound = input["upper_bound"]
+        else:
+            raise ValueError("Could not find upper bound.")
+
+        if "lower_bound" in input:
+            lower_bound = input["lower_bound"]
+        else:
+            raise ValueError("Could not find lower bound.")
+
+        if "data_ticks" in input:
+            data_ticks = input["data_ticks"]
+        else:
+            raise ValueError("Could not find data ticks.")
+
+        return Axis(lower_bound=lower_bound,
+                    upper_bound=upper_bound,
+                    data_ticks=data_ticks)
+
     def asJson(self) -> str:
+        """
+        Converts the current axis object to a JSON formatted string.
+        :return: a JSON formatted string representing the current axis.
+
+        examples:
+            >>> axis.asJson()
+            '{"nelem": 7, '
+             '"lower_bound": [0, 24, 48, 72, 96, 120, 144], '
+             '"upper_bound": [24, 48, 72, 96, 120, 144, 168], '
+             '"data_ticks": [12, 36, 60, 84, 108, 132, 156], '
+             '"fraction": [0.5], '
+             '"binding": "middle"}'
+        """
         return json.dumps(self.asDict())
+
+    @staticmethod
+    def fromJson(jsonstr: str) -> Axis:
+        """
+        Create an `Axis` object from a JSON formatted string:
+
+        :param jsonstr: A JSON formatted string which must contain `lower_bound`, `upper_bound`, and `data_ticks`.
+        :return: An `Axis` object.
+
+        example:
+            * Creating an `Axis` object from a JSON formatted String:
+
+            >>> from axisutilities import Axis
+            >>> s = '{"nelem": 7, "lower_bound": [0, 24, 48, 72, 96, 120, 144], "upper_bound": [24, 48, 72, 96, 120, 144, 168], "data_ticks": [12, 36, 60, 84, 108, 132, 156], "fraction": [0.5], "binding": "middle"}'
+            >>> axis = Axis.fromJson(s)
+        """
+        return Axis.fromDict(json.loads(jsonstr))
 
     def __repr__(self):
         summary = ["<timeaxis.TimeAxis>\n"]
@@ -240,6 +346,20 @@ class Axis:
             )
         else:
             raise TypeError("item must be an integer")
+
+    def adjust_binding_to(self, **kwargs) -> Axis:
+        if len(kwargs) == 1:
+            if "fraction" in kwargs:
+                return Axis(lower_bound=self._bounds[0, :],
+                            upper_bound=self._bounds[1, :],
+                            fraction=kwargs["fraction"])
+
+            if "binding" in kwargs:
+                return Axis(lower_bound=self._bounds[0, :],
+                            upper_bound=self._bounds[1, :],
+                            binding=kwargs["binding"])
+        else:
+            raise ValueError("you could provide either `fraction` or `binding` but not both and nothig else")
 
     @property
     def nelem(self) -> int:
@@ -315,7 +435,7 @@ class Axis:
             upper_bound: np.ndarray,
             f: np.ndarray) -> np.ndarray:
 
-        if any(f < 0) or any(f > 1):
+        if np.any(f < 0) or np.any(f > 1):
             raise ValueError("all values of fraction must be between 0 and 1")
         data_tick = ((1.0 - f) * lower_bound + f * upper_bound).astype(np.int64)
         Axis._data_ticks_sanity_check(data_tick)
@@ -349,7 +469,7 @@ class Axis:
             return AxisBinding.END
         elif np.all(fraction == 0.5):
             return AxisBinding.MIDDLE
-        elif np.all(0.0 < fraction < 1.0):
+        elif np.all(0.0 < fraction) and np.all(fraction < 1.0):
             return AxisBinding.CUSTOM_FRACTION
         else:
             raise ValueError("fraction must be a number between 0.0 and 1.0")

@@ -3,6 +3,17 @@ from numbers import Number
 
 
 class AxisBinding(Enum):
+    """
+    This class/Enumeration defines the different way that a data tick could be bound to an interval. The available
+    options are:
+    - `Beginning`: This means the data tick is bound to the beginning of the interval or the lower bound. The
+    fraction in this case is 0.0.
+    - `end`: The data is bound to the end of the interval or the upper bound. The fraction is 1.0.
+    - `middle`: The data is bound in the middle, i.e. half-way through between lower bound and upper bound. The
+    fraction is 0.5.
+    - `custom_fraction`: The is bounded to a user-defined location between the upper bound and or lower bound. The
+    fraction could be any value between 0.0 and 1.0.
+    """
     BEGINNING = ("beginning", 0.0)
     END = ("end", 1.0)
     MIDDLE = ("middle", 0.5)

@@ -12,6 +12,12 @@ from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
 class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
+    """
+    An abstract base class extending the `AxisBuilder` which is responsible to create `Axis` objects that are
+    representing time.
+
+    **Note:** Don't forget to call `.build()` at the end to get the actual `Axis` object.
+    """
     @staticmethod
     def datetime_to_timestamp(data_ticks: (datetime, date, str, Iterable), **kwrargs) -> np.ndarray:
         if isinstance(data_ticks, date):

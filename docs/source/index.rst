@@ -18,6 +18,8 @@ Welcome to TimeAxis's documentation!
 
    introduction
 
+   ./apireference/index
+
    license
 
     authors
