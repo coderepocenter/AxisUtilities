@@ -7,7 +7,7 @@ from typing import Iterable
 import numpy as np
 
 from axisutilities import Axis
-from axisutilities.axisbuilder import AxisBuilder
+from axisutilities.axisbuilder import AxisBuilder, FixedIntervalAxisBuilder
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
@@ -42,179 +42,6 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
         else:
             raise TypeError("data_ticks must be either a single value of type date or datetime, "
                             "or and iterable where all of its elements are of type date or datetime.")
-
-
-class IntervalBaseTimeAxisBuilder(TimeAxisBuilder):
-    _key_properties = ['_start', '_end', '_interval']
-
-    def __init__(self, **kwargs):
-        self.set_start(kwargs.get("start", None))
-        self.set_end(kwargs.get("end", None))
-        self.set_interval(kwargs.get("interval", None))
-        self.set_fraction(kwargs.get("fraction", 0.5))
-
-    def set_start(self, start: int) -> FixedIntervalTimeAxisBuilder:
-        if (start is None) or isinstance(start, int):
-            self._start = start
-        else:
-            raise TypeError("start must be an int or None.")
-
-        return self
-
-    def set_end(self, end: int) -> FixedIntervalTimeAxisBuilder:
-        if (end is None) or isinstance(end, int):
-            self._end = end
-        else:
-            raise TypeError("end must be an int or None.")
-
-        return self
-
-    def set_interval(self, interval: [int, Iterable]) -> FixedIntervalTimeAxisBuilder:
-        if isinstance(interval, int):
-            self._interval = interval
-        if isinstance(interval, Iterable):
-            self._interval = np.asarray(list(interval), dtype=np.int64).reshape((1, -1))
-        elif interval is None:
-            self._interval = None
-        else:
-            raise TypeError("interval must be an int, an Iterable, or None.")
-
-        return self
-
-    def set_fraction(self, fraction: float) -> FixedIntervalTimeAxisBuilder:
-        if isinstance(fraction, float):
-            self._fraction = fraction
-        elif fraction is None:
-            self._fraction = 0.5
-        else:
-            raise TypeError("start must be a float or None.")
-
-        if (self._fraction < 0) or (self._fraction > 1):
-            raise ValueError("Fraction must be between 0 and 1.")
-
-        return self
-
-    def prebuild_check(self) -> (bool, Exception):
-        if (self._start is None) or (self._end is None) or (self._interval is None):
-            raise ValueError("Not yet Ready to build the time axis.")
-
-        if self._start > self._end:
-            raise ValueError("Start must be smaller than  end")
-
-        if (self._fraction is None) or (self._fraction < 0) or (self._fraction > 1):
-            raise ValueError("some how fraction ended up to be None or out of bounds. "
-                             f"Current Fraction Value: {self._fraction}")
-
-        return True
-
-    def build(self) -> Axis:
-        if self.prebuild_check():
-            if isinstance(self._interval, int):
-                lower_bound = np.arange(self._start, self._end, self._interval)
-                upper_bound = np.arange(self._start + self._interval, self._end + 1, self._interval, dtype="int64")
-            elif isinstance(self._interval, np.ndarray):
-                interval_cumsum = np.concatenate(
-                    (np.zeros((1, 1)),self._interval.cumsum().reshape((1, -1))),
-                    axis=1
-                ).astype(dtype="int64")
-                lower_bound = self._start + interval_cumsum[0,:-1]
-                upper_bound = self._start + interval_cumsum[0,1:]
-            else:
-                raise TypeError("Somehow interval ended up to be of a type other than an int or numpy.ndarray "
-                                "(Iterable)")
-
-            data_ticks = (1 - self._fraction) * lower_bound + self._fraction * upper_bound
-            return Axis(lower_bound, upper_bound, data_ticks=data_ticks)
-
-
-class FixedIntervalTimeAxisBuilder(IntervalBaseTimeAxisBuilder):
-    _key_properties = ['_start', '_end', '_interval', '_n_interval']
-
-    def __init__(self, **kwargs):
-        self.set_n_interval(kwargs.get("n_interval", None))
-        super().__init__(**kwargs)
-
-    def set_interval(self, interval: int) -> FixedIntervalTimeAxisBuilder:
-        if isinstance(interval, int):
-            self._interval = interval
-        elif interval is None:
-            self._interval = None
-        else:
-            raise TypeError("interval must be an int or None.")
-
-        return self
-
-    def set_n_interval(self, n_interval: int) -> FixedIntervalTimeAxisBuilder:
-        if isinstance(n_interval, int):
-            self._n_interval = n_interval
-        elif n_interval is None:
-            self._n_interval = None
-        else:
-            raise TypeError("n_interval must be an int or None.")
-
-        return self
-
-    def prebuild_check(self) -> (bool, Exception):
-        self._mask = 0
-        self._n_available_keys = 0
-        for idx in range(len(self._key_properties)):
-            self._mask += 2 ** idx if self.__getattribute__(self._key_properties[idx]) is not None else 0
-            self._n_available_keys += 1 if self.__getattribute__(self._key_properties[idx]) is not None else 0
-
-        if self._n_available_keys != 3:
-            raise ValueError(f"Only three out of the four {self._key_properties} "
-                             f"could/should be provided. "
-                             f"Currently {self._n_available_keys} are provided.")
-
-        if self._mask not in {7, 11, 13, 14}:
-            raise ValueError("wrong combination of inputs are provided.")
-
-        if (self._start is not None) and (self._end is not None) and (self._start >= self._end):
-            raise ValueError("start must be less than end.")
-
-        if (self._interval is not None) and (self._interval<= 0.0):
-            raise ValueError("interval must be a positive number.")
-
-        if (self._n_interval is not None) and (self._n_interval < 1):
-            raise ValueError("n_interval must be larger than 1.")
-
-        if (self._fraction is None) or (self._fraction < 0) or (self._fraction > 1):
-            raise ValueError("some how fraction ended up to be None or out of bounds. "
-                             f"Current Fraction Value: {self._fraction}")
-
-        return True
-
-    def build(self) -> Axis:
-        if self.prebuild_check():
-            if self._mask == 7:
-                # this means start, end, and interval are provided
-                self._n_interval = int((self._end - self._start)/self._interval)
-
-                if self._n_interval < 1:
-                    raise ValueError("provided input leaded to wrong n_interval.")
-
-                if (self._start + self._n_interval * self._interval) != self._end:
-                    raise ValueError("provided interval does not divide the start to end interval properly.")
-            if self._mask == 11:
-                # this means start, end, and n_interval are provided
-                self._interval = int((self._end - self._start)/self._n_interval)
-
-            if self._mask == 13:
-                # this means start, interval, and n_interval are provided
-                self._end = self._start + (self._n_interval + 1) * self._interval
-
-            if self._mask == 14:
-                # this means end, interval, and n_interval are provided
-                self._start = self._end - (self._n_interval + 1) * self._interval
-
-            lower_bound = self._start + np.arange(self._n_interval, dtype="int64") * self._interval
-            upper_bound = lower_bound + self._interval
-            if upper_bound[-1] != self._end:
-                raise ValueError(f"last element of upper_bound (i.e. {upper_bound[-1]}) is not the same "
-                                 f"as provided end (i.e. {self._end}).")
-
-            data_ticks = (1 - self._fraction) * lower_bound + self._fraction * upper_bound
-            return Axis(lower_bound, upper_bound, data_ticks=data_ticks)
 
 
 class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
@@ -279,19 +106,19 @@ class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
                 start = int(TimeAxisBuilder.datetime_to_timestamp(self._start_date))
                 dt = self.get_dt()
                 end = int(TimeAxisBuilder.datetime_to_timestamp(self._end_date))
-                return FixedIntervalTimeAxisBuilder(start=start, end=end, interval=dt).build()
+                return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
             if (self._start_date is not None) and (self._n_interval is not None):
                 start = int(TimeAxisBuilder.datetime_to_timestamp(self._start_date))
                 dt = self.get_dt()
                 end = start + self._n_interval * dt
-                return FixedIntervalTimeAxisBuilder(start=start, end=end, interval=dt).build()
+                return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
             if (self._end_date is not None) and (self._n_interval is not None):
                 end = int(TimeAxisBuilder.datetime_to_timestamp(self._end_date))
                 dt = self.get_dt()
                 start = end - self._n_interval * dt
-                return FixedIntervalTimeAxisBuilder(start=start, end=end, interval=dt).build()
+                return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
 
 class DailyTimeAxisBuilder(BaseCommonKnownIntervals):
