@@ -344,124 +344,121 @@ class FixedIntervalAxisBuilder(IntervalBaseAxisBuilder):
             return Axis(lower_bound, upper_bound, data_ticks=data_ticks)
 
 
-# class RollingWindowAxisBuilder(AxisBuilder):
-#     def __init__(self, **kwargs):
-#         self.set_start(kwargs.get("start_date", None))
-#         self.set_end(kwargs.get("end_date", None))
-#         self.set_n_window(kwargs.get("n_window", None))
-#         self.set_window_size(kwargs.get("window_size", None))
-#         self.set_base_dt(kwargs.get("base_dt", None))
-#
-#     def set_start(self, start_date: int) -> RollingWindowAxisBuilder:
-#         if (start_date is None) or isinstance(start_date, int):
-#             self._start_date = start_date
-#         else:
-#             try:
-#                 self._start_date = int(start_date)
-#             except TypeError:
-#                 raise TypeError("start_date must be None or an integral type.")
-#
-#         return self
-#
-#     def set_end(self, end_date: int) -> RollingWindowAxisBuilder:
-#         if (end_date is None) or isinstance(end_date, int):
-#             self._end_date = end_date
-#         else:
-#             try:
-#                 self._end_date = int(end_date)
-#             except TypeError:
-#                 raise TypeError("end_date must be None or an integral type.")
-#         return self
-#
-#     def set_n_window(self, n_window: int) -> RollingWindowAxisBuilder:
-#         if isinstance(n_window, int):
-#             if n_window > 0:
-#                 self._n_window = n_window
-#             else:
-#                 raise ValueError("n_window must be a non-zero and positive integer.")
-#         elif n_window is None:
-#             self._n_window = None
-#         else:
-#             try:
-#                 self.set_n_window(int(n_window))
-#             except TypeError:
-#                 raise TypeError("n_window must be None or an integral type.")
-#
-#         return self
-#
-#     def set_window_size(self, window_size: int):
-#         if isinstance(window_size, int):
-#             if (window_size > 0) or (window_size % 2 != 1):
-#                 self._window_size = window_size
-#             else:
-#                 raise ValueError("window_size must be an odd positive number.")
-#         elif window_size is None:
-#             self._window_size = None
-#         else:
-#             try:
-#                 self.set_window_size(int(window_size))
-#             except TypeError:
-#                 raise TypeError("window_size must be None or an integral type.")
-#
-#         return self
-#
-#     def set_base_dt(self, base_dt: int):
-#         if isinstance(base_dt, int):
-#             if base_dt > 1:
-#                 self._base_dt = base_dt
-#             else:
-#                 raise ValueError("base_dt must be a positive integer.")
-#         elif base_dt is None:
-#             self._base_dt = None
-#         else:
-#             try:
-#                 self.set_base_dt(int(base_dt))
-#             except TypeError:
-#                 raise TypeError("base_dt must be None or an integral type")
-#
-#         return self
-#
-#     def prebuild_check(self) -> (bool, Exception):
-#         if self._start_date is None:
-#             raise ValueError("start value is not provided.")
-#
-#         if self._base_dt is None:
-#             raise ValueError("base_dt is not provided")
-#
-#         if self._window_size is None:
-#             raise ValueError("window size is not provided. window_size must a positive odd integer.")
-#
-#         if (self._n_window is not None) and (self._end_date is not None):
-#             raise ValueError("You could provide either the end_date or the n_window; but not both.")
-#
-#         if (self._n_window is None) and (self._end_date is None):
-#             raise ValueError("Neither end_date nor the n_window is provided. "
-#                              "You must provide exactly one of them.")
-#
-#         if (self._start_date is not None) and (self._end_date is not None) and (self._start_date > self._end_date):
-#             raise ValueError("start_date must be before end_date.")
-#
-#         return True
-#
-#     def build(self) -> Axis:
-#         if self.prebuild_check():
-#             if self._end_date is not None:
-#                 self._n_window = np.ceil(
-#                     (TimeAxisBuilder.datetime_to_timestamp(self._end_date) -
-#                      TimeAxisBuilder.datetime_to_timestamp(self._start_date)) / self._base_dt
-#                 ) - (self._window_size - 1)
-#                 if self._n_window < 1:
-#                     raise ValueError("the provided end_date and start_date resulted in 0 n_window.")
-#
-#             lower_bound = TimeAxisBuilder.datetime_to_timestamp(self._start_date) + \
-#                           np.arange(self._n_window, dtype="int64") * self._base_dt
-#
-#             window_length = self._window_size * self._base_dt
-#             upper_bound = lower_bound + window_length
-#             data_tick = 0.5 * (lower_bound + upper_bound)
-#             return Axis(
-#                 lower_bound=lower_bound,
-#                 upper_bound=upper_bound,
-#                 data_ticks=data_tick
-#             )
+class RollingWindowAxisBuilder(AxisBuilder):
+    def __init__(self, **kwargs):
+        self.set_start(kwargs.get("start_date", None))
+        self.set_end(kwargs.get("end_date", None))
+        self.set_n_window(kwargs.get("n_window", None))
+        self.set_window_size(kwargs.get("window_size", None))
+        self.set_base_dt(kwargs.get("base_dt", None))
+
+    def set_start(self, start_date: int) -> RollingWindowAxisBuilder:
+        if (start_date is None) or isinstance(start_date, int):
+            self._start = start_date
+        else:
+            try:
+                self._start = int(start_date)
+            except TypeError:
+                raise TypeError("start_date must be None or an integral type.")
+
+        return self
+
+    def set_end(self, end_date: int) -> RollingWindowAxisBuilder:
+        if (end_date is None) or isinstance(end_date, int):
+            self._end = end_date
+        else:
+            try:
+                self._end = int(end_date)
+            except TypeError:
+                raise TypeError("end_date must be None or an integral type.")
+        return self
+
+    def set_n_window(self, n_window: int) -> RollingWindowAxisBuilder:
+        if isinstance(n_window, int):
+            if n_window > 0:
+                self._n_window = n_window
+            else:
+                raise ValueError("n_window must be a non-zero and positive integer.")
+        elif n_window is None:
+            self._n_window = None
+        else:
+            try:
+                self.set_n_window(int(n_window))
+            except TypeError:
+                raise TypeError("n_window must be None or an integral type.")
+
+        return self
+
+    def set_window_size(self, window_size: int):
+        if isinstance(window_size, int):
+            if (window_size > 0) or (window_size % 2 != 1):
+                self._window_size = window_size
+            else:
+                raise ValueError("window_size must be an odd positive number.")
+        elif window_size is None:
+            self._window_size = None
+        else:
+            try:
+                self.set_window_size(int(window_size))
+            except TypeError:
+                raise TypeError("window_size must be None or an integral type.")
+
+        return self
+
+    def set_base_dt(self, base_dt: int):
+        if isinstance(base_dt, int):
+            if base_dt > 1:
+                self._base_dt = base_dt
+            else:
+                raise ValueError("base_dt must be a positive integer.")
+        elif base_dt is None:
+            self._base_dt = None
+        else:
+            try:
+                self.set_base_dt(int(base_dt))
+            except TypeError:
+                raise TypeError("base_dt must be None or an integral type")
+
+        return self
+
+    def prebuild_check(self) -> (bool, Exception):
+        if self._start is None:
+            raise ValueError("start value is not provided.")
+
+        if self._base_dt is None:
+            raise ValueError("base_dt is not provided")
+
+        if self._window_size is None:
+            raise ValueError("window size is not provided. window_size must a positive odd integer.")
+
+        if (self._n_window is not None) and (self._end is not None):
+            raise ValueError("You could provide either the end or the n_window; but not both.")
+
+        if (self._n_window is None) and (self._end is None):
+            raise ValueError("Neither end nor the n_window is provided. "
+                             "You must provide exactly one of them.")
+
+        if (self._start is not None) and (self._end is not None) and (self._start > self._end):
+            raise ValueError("start must be before end.")
+
+        return True
+
+    def build(self) -> Axis:
+        if self.prebuild_check():
+            if self._end is not None:
+                self._n_window = np.ceil((self._end - self._start) / self._base_dt) - (self._window_size - 1)
+            if self._n_window < 1:
+                raise ValueError("the provided end_date and start_date resulted in 0 n_window.")
+
+            lower_bound = self._start + \
+                          np.arange(self._n_window, dtype="int64") * self._base_dt
+
+            window_length = self._window_size * self._base_dt
+            upper_bound = lower_bound + window_length
+            data_tick = 0.5 * (lower_bound + upper_bound)
+            return Axis(
+                lower_bound=lower_bound,
+                upper_bound=upper_bound,
+                data_ticks=data_tick
+            )
 
