@@ -58,6 +58,8 @@ In this example, first we create a daily time-axis of length 14 days, i.e. we ju
 along the time axis:
 
 ```python
+from axisutilities import DailyTimeAxisBuilder
+from datetime import date
 from_axis = DailyTimeAxisBuilder(
     start_date=date(2019, 1, 1),
     n_interval=14
@@ -70,6 +72,8 @@ Now we create a weekly time-axis of length 3, i.e. the time axis would have thre
 span of 3 weeks:
 
 ```python
+from axisutilities import WeeklyTimeAxisBuilder
+from datetime import date
 to_axis = WeeklyTimeAxisBuilder(
     start_date=date(2019, 1, 1),
     n_interval=3
@@ -81,6 +85,7 @@ to_axis = WeeklyTimeAxisBuilder(
 now we create a time axis converter object, as follows:
 
 ```python
+from axisutilities import AxisConverter
 tc = AxisConverter(
     from_axis=from_axis, 
     to_axis=to_axis
@@ -121,6 +126,7 @@ different data sources. Their other dimensions could be completely different.
 You could easily calculate a rolling or moving average of your data. Here is an example:
 
 ```python
+from axisutilities import DailyTimeAxisBuilder, RollingWindowTimeAxisBuilder, AxisConverter
 from_axis = DailyTimeAxisBuilder(
     start_date=date(2019, 1, 1),
     n_interval=14
@@ -132,7 +138,7 @@ to_axis = RollingWindowTimeAxisBuilder(
     window_size=7
 ).build()
 
-tc = TimeAxisConverter(from_axis=from_axis, to_axis=to_axis)
+tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
 to_data = tc.average(from_data)
 ```
@@ -147,6 +153,7 @@ time axis is shifted only one day. Yes, the intervals in the time-axis are overl
 
 ```python
 # Daily time axis spanning ten years.
+from axisutilities import DailyTimeAxisBuilder, MonthlyTimeAxisBuilder, AxisConverter
 from_axis = DailyTimeAxisBuilder(
     start_date=date(2010, 1, 1),
     end_date=date(2020, 1, 1)
@@ -158,7 +165,7 @@ to_axis = MonthlyTimeAxisBuilder(
     end_year=2019,
 ).build()
 
-tc = TimeAxisConverter(from_axis=from_axis, to_axis=to_axis)
+tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 monthly_avg = tc.average(daily_data)
 ```
 
@@ -167,6 +174,7 @@ the December. If you want to control that you could pass the `start_month` and/o
 behavior:
 
 ```python
+from axisutilities import MonthlyTimeAxisBuilder
 to_axis = MonthlyTimeAxisBuilder(
     start_year=2010,
     start_monnth=4,
@@ -174,6 +182,48 @@ to_axis = MonthlyTimeAxisBuilder(
     end_month=10
 ).build()
 ```
+
+## Min and Max
+The same way that you could calculate average, you could calculate the min and max.
+
+```python
+tc = AxisConverter(from_axis=from_axis, to_axis= to_axis)
+
+tc.min(data)
+tc.max(data)
+```
+
+for example, if the form axis is a daily axis, and to_axis is a monthly axis, `tc.min(data)` calculates the minimum 
+daily data within the month.
+
+## User-defined functions
+The users are able to define their own function to apply. All you need to do is to pass the data along with the function
+that you want to apply. Let's say the user is interested to calculate the standard deviation:
+
+```python
+tc = AxisConverter(from_axis=daily_axis, to_axis=monthly_axis)
+
+to_data = tc.apply_function(from_data, np.nanstd)
+```
+**NOTES:** 
+- Pay attention that there is no parenthesis after `np.nanstd`. You need to pass the function object itself. Any thing
+that is conisdered `Callable` within Python.
+- Note that instead of passing `np.std`, we are passing the version of the function that handles the `NaN`. The 
+function that you pass must handle the `NaN` and missing values properly. If you pass the regular standard deviation and
+your source data contains `NaN` your converted results would become also NaN.
+You could pass any function that you want:
+
+```python
+tc = AxisConverter(from_axis=daily_axis, to_axis=monthly_axis)
+
+def myfunction(data):
+    return np.nansum(data) * 42
+
+to_data = tc.apply_function(from_data, myfunction)
+```
+
+Again, pay attention that when passing `myfunctoin` there is no parenthesis and we are handling the `NaN` inside
+the function by using `np.nansum` instead of `np.sum`. 
 
 # Authors:
 - Abouali, Mohammad (maboualidev@gmail.com; mabouali@ucar.edu)

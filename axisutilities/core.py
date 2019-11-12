@@ -469,30 +469,10 @@ class Axis:
             return AxisBinding.END
         elif np.all(fraction == 0.5):
             return AxisBinding.MIDDLE
-        elif np.all(0.0 < fraction) and np.all(fraction < 1.0):
+        elif np.all(0.0 <= fraction) and np.all(fraction <= 1.0):
             return AxisBinding.CUSTOM_FRACTION
         else:
             raise ValueError("fraction must be a number between 0.0 and 1.0")
-
-    # @staticmethod
-    # def builder(name: str) -> TimeAxisBuilder:
-    #     if isinstance(name, str):
-    #         name_lower = name.lower()
-    #         if name_lower == "fixed_interval":
-    #             return FixedIntervalTimeAxisBuilder()
-    #
-    #         if name_lower == "daily_time_axis":
-    #             return DailyTimeAxisBuilder()
-    #
-    #         if name_lower == "weekly_time_axis":
-    #             return WeeklyTimeAxisBuilder()
-    #
-    #         if name_lower == "rolling_window":
-    #             return RollingWindowTimeAxisBuilder()
-    #
-    #         raise ValueError(f"Could not find a TimaAxisBUilder associated to {name}.")
-    #     else:
-    #         raise TypeError("name must be string")
 
 
 

@@ -1,12 +1,89 @@
 from datetime import datetime, timedelta
 from unittest import TestCase
 
-from axisutilities import FixedIntervalAxisBuilder
+from axisutilities import FixedIntervalAxisBuilder, IntervalBaseAxisBuilder
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
 class TestIntervalBaseAxisBuilder(TestCase):
-    pass
+    def test_build_00(self):
+        axis = IntervalBaseAxisBuilder()\
+            .set_start(0)\
+            .set_end(7*24)\
+            .set_interval(24)\
+            .build()
+
+        self.assertListEqual(
+            [i*24 for i in range(7)],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [i*24 + 24 for i in range(7)],
+            axis.upper_bound.flatten().tolist()
+        )
+
+        self.assertEqual(0.5, axis.fraction[0, 0], 1)
+
+    def test_build_01(self):
+        axis = IntervalBaseAxisBuilder(
+            start=0,
+            end=7*24,
+            interval=24
+        ).build()
+
+        self.assertListEqual(
+            [i*24 for i in range(7)],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [i*24 + 24 for i in range(7)],
+            axis.upper_bound.flatten().tolist()
+        )
+
+        self.assertEqual(0.5, axis.fraction[0, 0], 1)
+
+    def test_build_02(self):
+        axis = IntervalBaseAxisBuilder(
+            start=0,
+            end=7 * 24,
+            interval=24,
+            fraction=1.0/6.0
+        ).build()
+
+        self.assertListEqual(
+            [i * 24 for i in range(7)],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [i * 24 + 24 for i in range(7)],
+            axis.upper_bound.flatten().tolist()
+        )
+
+        self.assertEqual(1/6, axis.fraction[0, 0], 3)
+
+    def test_build_03(self):
+        axis = IntervalBaseAxisBuilder(
+            start=0,
+            end=7*24,
+            interval=24,
+            fraction=[0, 0, 0, 0.5, 1, 1, 1]
+        ).build()
+
+        self.assertListEqual(
+            [i*24 for i in range(7)],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [i*24 + 24 for i in range(7)],
+            axis.upper_bound.flatten().tolist()
+        )
+
+        for e in zip([0, 0, 0, 0.5, 1, 1, 1], axis.fraction.flatten().tolist()):
+            self.assertEqual(e[0] * 1.0, e[1] * 1.0, 1)
 
 
 class TestFixedIntervalTimeAxisBuilder(TestCase):

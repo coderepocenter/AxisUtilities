@@ -84,18 +84,21 @@ class IntervalBaseAxisBuilder(AxisBuilder):
 
         return self
 
-    def set_fraction(self, fraction: float) -> IntervalBaseAxisBuilder:
+    def set_fraction(self, fraction: (float, Iterable)) -> IntervalBaseAxisBuilder:
         if isinstance(fraction, float):
-            self._fraction = fraction
+            self._fraction = np.float(fraction)
+        if isinstance(fraction, Iterable):
+            self._fraction = np.asarray(fraction, dtype="float").reshape((1, -1))
         elif fraction is None:
             self._fraction = 0.5
         else:
             try:
-                self._fraction = float(fraction)
+                self._fraction = np.float(fraction)
             except TypeError:
-                raise TypeError("start must be a float, None, or a scalar object that can be converted to a float.")
+                raise TypeError("start must be a float, None, "
+                                "or a scalar/iterable object that can be converted to a float.")
 
-        if (self._fraction < 0) or (self._fraction > 1):
+        if np.any(self._fraction < 0) or np.any(self._fraction > 1):
             raise ValueError("Fraction must be between 0 and 1.")
 
         return self
@@ -107,7 +110,7 @@ class IntervalBaseAxisBuilder(AxisBuilder):
         if self._start > self._end:
             raise ValueError("Start must be smaller than  end")
 
-        if (self._fraction is None) or (self._fraction < 0) or (self._fraction > 1):
+        if (self._fraction is None) or np.any(self._fraction < 0) or np.any(self._fraction > 1):
             raise ValueError("some how fraction ended up to be None or out of bounds. "
                              f"Current Fraction Value: {self._fraction}")
 
