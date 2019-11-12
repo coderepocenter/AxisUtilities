@@ -35,6 +35,74 @@ class IntervalBaseAxisBuilder(AxisBuilder):
     **NOTE:** don't forget to call the `.build()` function to get an actual `Axis` object.
 
     Examples:
+        * Creating a 7-day daily axis:
+
+        >>> axis = IntervalBaseAxisBuilder(
+        ...             start=0,
+        ...             end=7*24,
+        ...             interval=24
+        ...         ).build()
+
+        * Creating a 7-day daily axis and binding the data ticks to 4 am every day:
+
+        >>> axis = IntervalBaseAxisBuilder(
+        ...             start=0,
+        ...             end=7 * 24,
+        ...             interval=24,
+        ...             fraction=1.0/6.0
+        ...         ).build()
+
+        * Creating a 7-day daily axis and binding the first three days to the begining of the
+        day, the 4th day to noon, and the last three days to the end of the day.
+
+        >>> axis = IntervalBaseAxisBuilder(
+        ...             start=0,
+        ...             end=7*24,
+        ...             interval=24,
+        ...             fraction=[0, 0, 0, 0.5, 1, 1, 1]
+        ...         ).build()
+
+        * Creating an axis with different length/interval. In this example we create an axis that
+        spans 7 days, but contains only three-element. The first element, covers 3 days, the second
+        element convers one day, and the third element convers three days again:
+
+        >>> axis = IntervalBaseAxisBuilder(
+        ...             start=0,
+        ...             end=7*24,
+        ...             interval=[3*24, 24, 3*24]
+        ...         ).build()
+        >>> axis.lower_bound
+        array([[ 0, 72, 96]])
+        >>> axis.upper_bound
+        array([[ 72,  96, 168]])
+
+        * Passing the required inputs one by one: All these utilities follow the **Builder Design Pattern**
+        and you are able to create them gradually.
+
+        >>> axisBldr = IntervalBaseAxisBuilder()
+        >>> # After doing some computation or file loading, you now know what the start date would be:
+        ... axisBldr.set_start(start)
+        >>> # Now based on the known start perhaps you need to do some more work
+        ... # before you could decide what should be the end time. Once you have it:
+        ... axisBldr.set_end(end)
+        >>> # Now again based on the known start and end you could calculate the interval
+        ... # it could be a single fixed interval, or a variable length interval:
+        ... axisBldr.set_interval(interval)
+        >>> # Now you are ready to build your axis
+        ... axis = axisBldr.build()
+        >>> # The default binding is middle. May be you decide to create two more axis
+        ... # with the same configuration, i.e. start/end/interval, but different binding:
+        ... axis_binding_to_beginning = axisBldr.set_fraction(0.0).build()
+        >>> axis_binding_to_end = axisBldr.set_fraction(1.0).build()
+        >>> axis_custom_binding = axisBldr.set_fraction(1.0/6.0).build()
+        >>> # now you decide to create another axis with the same configuration but different
+        ... # interval settings
+        ... another_axis = axisBldr.set_interval(new_interval).build()
+        >>> # Note that another_axis fraction is set to 1.0/6.0 (the last setting). If you want
+        ... # to change that to the default binding you need to do one of the followings:
+        ... another_axis = axisBldr.set_interval(0.5).set_interval(new_interval).build()
+        >>> # or
+        ... another_axis = axisBldr.set_interval(None).set_interval(new_interval).build()
 
 
     """
@@ -137,6 +205,56 @@ class IntervalBaseAxisBuilder(AxisBuilder):
 
 
 class FixedIntervalAxisBuilder(IntervalBaseAxisBuilder):
+    """
+    This is essentially the same as `IntervalBaseAxisBuilder`; however, as the name suggest, you
+    could only provide fixed interval. You cannot have varying length intervals. The following
+    information could be provided.
+
+    - start: defines the beginning of the axis
+    - end: defines the end of the axis
+    - interval: defines the interval or length for each element. Note that unlike `IntervalBaseAxisBuilder`, this
+    can be only a scalar convertible to `int`
+    - n_interval: defines how many interval do you want between the beginning and end.
+
+    **NOTE:** You could only provide three out of the four item mentioned above; Even if you provide consistence input.
+
+    for example you could provide `start`, `interval`, and `n_interval`, which the `end` is calculated accordingly. Or you could
+    provide `end`, `interval`, `n_interval`, and the `start` is calculated.  Here are some examples
+
+    Examples:
+        * Creating 7 Day axis:
+
+        >>> axis = FixedIntervalAxisBuilder(
+        ...             start=0,
+        ...             end=7*24,
+        ...             n_interval=7
+        ...         ).build()
+
+        * The same as `IntervalBaseAxisBuilder`:
+
+        >>> axis = FixedIntervalAxisBuilder(
+        ...             start=0,
+        ...             end=7*24,
+        ...             interval=24
+        ...         ).build()
+
+        * Knowing the `end`, `interval`, and `n_interval`:
+
+        >>> axis = FixedIntervalAxisBuilder(
+        ...             end=7*24,
+        ...             interval=24,
+        ...             n_interval=7
+        ...         ).build()
+
+        * Knowing the `start`, `interval`, and `n_interval`:
+
+        >>> axis = FixedIntervalAxisBuilder(
+        ...             start=0,
+        ...             interval=24,
+        ...             n_interval=7
+        ...         ).build()
+
+    """
     _key_properties = ['_start', '_end', '_interval', '_n_interval']
 
     def __init__(self, **kwargs):
@@ -210,11 +328,11 @@ class FixedIntervalAxisBuilder(IntervalBaseAxisBuilder):
 
             if self._mask == 13:
                 # this means start, interval, and n_interval are provided
-                self._end = self._start + (self._n_interval + 1) * self._interval
+                self._end = self._start + self._n_interval * self._interval
 
             if self._mask == 14:
                 # this means end, interval, and n_interval are provided
-                self._start = self._end - (self._n_interval + 1) * self._interval
+                self._start = self._end - self._n_interval * self._interval
 
             lower_bound = self._start + np.arange(self._n_interval, dtype="int64") * self._interval
             upper_bound = lower_bound + self._interval

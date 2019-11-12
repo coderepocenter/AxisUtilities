@@ -8,9 +8,6 @@ from axisutilities import Axis, WeeklyTimeAxisBuilder, RollingWindowTimeAxisBuil
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
-
-
-
 class TestDailyTimeAxisBuilder(TestCase):
     @classmethod
     def setUpClass(cls) -> None:

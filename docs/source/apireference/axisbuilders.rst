@@ -1,16 +1,19 @@
 Axis Builder Utilities
 ----------------------
 
-Time Axis Builders
+Generic Axis Build
 ^^^^^^^^^^^^^^^^^^
 
-IntervalBaseTimeAxisBuilder
+Interval Base Axis Builder
 +++++++++++++++++++++++++++
-.. autoclass:: axisutilities.IntervalBaseTimeAxisBuilder
+.. autoclass:: axisutilities.IntervalBaseAxisBuilder
 
-FixedIntervalTimeAxisBuilder
+Fixed Interval Axis Builder
 ++++++++++++++++++++++++++++
-.. autoclass:: axisutilities.FixedIntervalTimeAxisBuilder
+.. autoclass:: axisutilities.FixedIntervalAxisBuilder
+
+Time Axis Builders
+^^^^^^^^^^^^^^^^^^
 
 DailyTimeAxisBuilder
 ++++++++++++++++++++
