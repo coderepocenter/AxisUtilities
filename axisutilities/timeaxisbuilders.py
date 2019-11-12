@@ -93,15 +93,6 @@ class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
 
     def build(self) -> Axis:
         if self.prebuild_check():
-            # # Older implementation
-            # dt = np.int64(timedelta(days=1).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
-            # nDays = (self._end_date - self._start_date).days + 1
-            # lower_bound = np.arange(nDays, dtype="int64") * dt + TimeAxisBuilder.datetime_to_timestamp(self._start_date)
-            # upper_bound = lower_bound + dt
-            # data_ticks = lower_bound + np.int64(timedelta(hours=12).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
-
-            # return TimeAxis(lower_bound, upper_bound, data_ticks=data_ticks)
-
             if (self._start_date is not None) and (self._end_date is not None):
                 start = int(TimeAxisBuilder.datetime_to_timestamp(self._start_date))
                 dt = self.get_dt()
@@ -227,6 +218,9 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
 
 
 class RollingWindowTimeAxisBuilder(TimeAxisBuilder):
+    """
+    Creates a Rolling Window Time Axis
+    """
     def __init__(self, **kwargs):
         self.set_start_date(kwargs.get("start_date", None))
         self.set_end_date(kwargs.get("end_date", None))
@@ -334,6 +328,38 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder):
 
 
 class MonthlyTimeAxisBuilder(TimeAxisBuilder):
+    """
+    Creates a monthly time axis. You could define the  start/end Year/Month and it creates a time axis with
+    monthly resolution.
+
+    The start/end month are optional value. If you don't provide it, the start month is assumed to be January
+    and the end month is assumed to be December.
+
+    Examples:
+        * Creating a 12 month long time axis covering 2019:
+
+        >>> ta = MonthlyTimeAxisBuilder(
+        ...             start_year=2019,
+        ...             end_year=2019
+        ...         ).build()
+
+        * Creating 10 years long monthly time axis covering from January 2010 to December 2019:
+
+        >>> ta = MonthlyTimeAxisBuilder(
+        ...             start_year=2010,
+        ...             end_year=2019
+        ...         ).build()
+
+        * Creating a time axis that covers September 2019 to end of March 2020:
+
+        >>> ta = MonthlyTimeAxisBuilder(
+        ...             start_year=2019,
+        ...             start_month=9,
+        ...             end_year=2020,
+        ...             end_month=3
+        ...         ).build()
+
+    """
     def __init__(self, start_year: int, end_year: int, start_month: int =1, end_month: int = 12):
         if (start_year is not None) and (start_month is not None):
             self.set_start_year_month(start_year, start_month)
