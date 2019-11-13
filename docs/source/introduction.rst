@@ -58,7 +58,7 @@ The general procedure is:
 2. Create a destination axis, i.e. the axis that you want to convert your data to,
 3. Create an `AxisConverter` object by passing the source and destination axis you created previously,
 4. Finally, convert your data from the source axis to the destination axis, using the `AxisConverter` object you created
-in previous step.
+   in previous step.
 
 You could repeat step (4) as many time as you want, as long as the source and destination axis are the same. The true
 benefit of this approach is in the reuse of the same computations, a.k.a. ***remapping weights***.
@@ -119,6 +119,7 @@ that the first dimension is the time dimension. If the time dimension (source ax
 you could define it as follows:
 
 .. code-block:: python
+
     to_data = tc.average(from_data, time_dimension=n)
 
 
@@ -132,6 +133,7 @@ same `tc` or `AxisConverter` object that you created before to convert them to y
 .. code-block:: python
 
     to_data = tc.average(another_data_field)
+
 
 **NOTE:** Please do note that only the 1D axis that you are converting from needs to be the same along all these
 different data sources. Their other dimensions could be completely different.

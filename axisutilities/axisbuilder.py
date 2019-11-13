@@ -26,11 +26,14 @@ class IntervalBaseAxisBuilder(AxisBuilder):
     The user should provide the following values:
 
     - a start value: a scalar value which could be converted to `int` defining the beginning of the axis.
+
     - an end value: a scalar value which could be converted to `int` defining the end of the axis.
+
     - inter value or values: a scalar value which could be converted to int or an iterable containing only elements
-    that could be converted to `np.int64`. The iterable could be used to create axis with various size interval.
+      that could be converted to `np.int64`. The iterable could be used to create axis with various size interval.
+
     - [fraction]: an optional fraction value that defines the data binding. The default value is 0.5, i.e. in the
-    middle of the interval.
+      middle of the interval.
 
     **NOTE:** don't forget to call the `.build()` function to get an actual `Axis` object.
 
@@ -53,7 +56,7 @@ class IntervalBaseAxisBuilder(AxisBuilder):
         ...         ).build()
 
         * Creating a 7-day daily axis and binding the first three days to the begining of the
-        day, the 4th day to noon, and the last three days to the end of the day.
+          day, the 4th day to noon, and the last three days to the end of the day.
 
         >>> axis = IntervalBaseAxisBuilder(
         ...             start=0,
@@ -63,8 +66,8 @@ class IntervalBaseAxisBuilder(AxisBuilder):
         ...         ).build()
 
         * Creating an axis with different length/interval. In this example we create an axis that
-        spans 7 days, but contains only three-element. The first element, covers 3 days, the second
-        element convers one day, and the third element convers three days again:
+          spans 7 days, but contains only three-element. The first element, covers 3 days, the second
+          element convers one day, and the third element convers three days again:
 
         >>> axis = IntervalBaseAxisBuilder(
         ...             start=0,
@@ -77,7 +80,7 @@ class IntervalBaseAxisBuilder(AxisBuilder):
         array([[ 72,  96, 168]])
 
         * Passing the required inputs one by one: All these utilities follow the **Builder Design Pattern**
-        and you are able to create them gradually.
+          and you are able to create them gradually.
 
         >>> axisBldr = IntervalBaseAxisBuilder()
         >>> # After doing some computation or file loading, you now know what the start date would be:
@@ -213,7 +216,7 @@ class FixedIntervalAxisBuilder(IntervalBaseAxisBuilder):
     - start: defines the beginning of the axis
     - end: defines the end of the axis
     - interval: defines the interval or length for each element. Note that unlike `IntervalBaseAxisBuilder`, this
-    can be only a scalar convertible to `int`
+      can be only a scalar convertible to `int`
     - n_interval: defines how many interval do you want between the beginning and end.
 
     **NOTE:** You could only provide three out of the four item mentioned above; Even if you provide consistence input.
@@ -345,31 +348,84 @@ class FixedIntervalAxisBuilder(IntervalBaseAxisBuilder):
 
 
 class RollingWindowAxisBuilder(AxisBuilder):
+    """
+    As the name suggests, creates an axis whose elements are overlapping. Combined with averaging operation,
+    it becomes the same as moving average (or moving minimum, ...). The following information are needed:
+
+    - start: when the axis starts
+    - end: when the axis is ending.
+    - base: the base unit of the axis.
+    - window_size: the size of the window expressed as a positive odd integer relative to the base that
+      is provided. For example, let's say base is set to be 24 (one day contains 24 hours) and then you set
+      the window_size to 3; This means the window_size is 3 days (3 times the base).
+    - n_window: number of window that you want to have.
+
+    **NOTE:** you could provide either `end` or the `n_window`; but not both.
+    **NOTE:** Again, don't forget to call `.build()` at the end.
+
+    Note that each element is shifted one `base` forward. but each element of the axis covers the entire
+    window_size. For example, if you set the `base` to be one day, the `window_size` to be 3 days, and the
+    `start` to be hour 0, then the first element starts at 0 and ends at 72 hours (3 days). The second element
+    starts at 24 (shifted one base (=one day in this example) forward) and ends at 96 hours.
+
+    Examples:
+        * Creating a rolling window by defining `start`, `end`, `base`, and `window_size`:
+
+        >>> from axisutilities import RollingWindowAxisBuilder
+        >>> axis = RollingWindowAxisBuilder(
+        ...             start=0,
+        ...             end=7*24,
+        ...             base=24,
+        ...             window_size=3
+        ...         ).build()
+        >>> axis.lower_bound
+        array([[ 0, 24, 48, 72, 96]])
+        >>> axis.upper_bound
+        array([[ 72,  96, 120, 144, 168]])
+        >>> axis.nelem
+        5
+
+        * Creating a rolling window by deifning `start`, `base`, `window_size`, and `n_window`:
+
+        >>> axis = RollingWindowAxisBuilder(
+        ...             start=0,
+        ...             base=24,
+        ...             window_size=3,
+        ...             n_window=5
+        ...         ).build()
+        >>> axis.lower_bound
+        array([[ 0, 24, 48, 72, 96]])
+        >>> axis.upper_bound
+        array([[ 72,  96, 120, 144, 168]])
+        >>> axis.nelem
+        5
+
+    """
     def __init__(self, **kwargs):
-        self.set_start(kwargs.get("start_date", None))
-        self.set_end(kwargs.get("end_date", None))
+        self.set_start(kwargs.get("start", None))
+        self.set_end(kwargs.get("end", None))
         self.set_n_window(kwargs.get("n_window", None))
         self.set_window_size(kwargs.get("window_size", None))
-        self.set_base_dt(kwargs.get("base_dt", None))
+        self.set_base(kwargs.get("base", None))
 
-    def set_start(self, start_date: int) -> RollingWindowAxisBuilder:
-        if (start_date is None) or isinstance(start_date, int):
-            self._start = start_date
+    def set_start(self, start: int) -> RollingWindowAxisBuilder:
+        if (start is None) or isinstance(start, int):
+            self._start = start
         else:
             try:
-                self._start = int(start_date)
-            except TypeError:
+                self._start = int(start)
+            except ValueError:
                 raise TypeError("start_date must be None or an integral type.")
 
         return self
 
-    def set_end(self, end_date: int) -> RollingWindowAxisBuilder:
-        if (end_date is None) or isinstance(end_date, int):
-            self._end = end_date
+    def set_end(self, end: int) -> RollingWindowAxisBuilder:
+        if (end is None) or isinstance(end, int):
+            self._end = end
         else:
             try:
-                self._end = int(end_date)
-            except TypeError:
+                self._end = int(end)
+            except ValueError:
                 raise TypeError("end_date must be None or an integral type.")
         return self
 
@@ -384,14 +440,14 @@ class RollingWindowAxisBuilder(AxisBuilder):
         else:
             try:
                 self.set_n_window(int(n_window))
-            except TypeError:
+            except ValueError:
                 raise TypeError("n_window must be None or an integral type.")
 
         return self
 
     def set_window_size(self, window_size: int):
         if isinstance(window_size, int):
-            if (window_size > 0) or (window_size % 2 != 1):
+            if (window_size > 0) and (window_size % 2 == 1):
                 self._window_size = window_size
             else:
                 raise ValueError("window_size must be an odd positive number.")
@@ -400,24 +456,24 @@ class RollingWindowAxisBuilder(AxisBuilder):
         else:
             try:
                 self.set_window_size(int(window_size))
-            except TypeError:
+            except ValueError:
                 raise TypeError("window_size must be None or an integral type.")
 
         return self
 
-    def set_base_dt(self, base_dt: int):
-        if isinstance(base_dt, int):
-            if base_dt > 1:
-                self._base_dt = base_dt
+    def set_base(self, base: int):
+        if isinstance(base, int):
+            if base >= 1:
+                self._base = base
             else:
-                raise ValueError("base_dt must be a positive integer.")
-        elif base_dt is None:
-            self._base_dt = None
+                raise ValueError("base must be a positive integer.")
+        elif base is None:
+            self._base = None
         else:
             try:
-                self.set_base_dt(int(base_dt))
+                self.set_base(int(base))
             except TypeError:
-                raise TypeError("base_dt must be None or an integral type")
+                raise TypeError("base must be None or an integral type")
 
         return self
 
@@ -425,7 +481,7 @@ class RollingWindowAxisBuilder(AxisBuilder):
         if self._start is None:
             raise ValueError("start value is not provided.")
 
-        if self._base_dt is None:
+        if self._base is None:
             raise ValueError("base_dt is not provided")
 
         if self._window_size is None:
@@ -446,14 +502,14 @@ class RollingWindowAxisBuilder(AxisBuilder):
     def build(self) -> Axis:
         if self.prebuild_check():
             if self._end is not None:
-                self._n_window = np.ceil((self._end - self._start) / self._base_dt) - (self._window_size - 1)
+                self._n_window = np.ceil((self._end - self._start) / self._base) - (self._window_size - 1)
             if self._n_window < 1:
                 raise ValueError("the provided end_date and start_date resulted in 0 n_window.")
 
             lower_bound = self._start + \
-                          np.arange(self._n_window, dtype="int64") * self._base_dt
+                          np.arange(self._n_window, dtype="int64") * self._base
 
-            window_length = self._window_size * self._base_dt
+            window_length = self._window_size * self._base
             upper_bound = lower_bound + window_length
             data_tick = 0.5 * (lower_bound + upper_bound)
             return Axis(

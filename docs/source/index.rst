@@ -22,7 +22,7 @@ Welcome to TimeAxis's documentation!
 
    license
 
-    authors
+   authors
 
 Indices and tables
 ==================

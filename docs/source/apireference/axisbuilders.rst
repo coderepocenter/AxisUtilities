@@ -12,6 +12,10 @@ Fixed Interval Axis Builder
 ++++++++++++++++++++++++++++
 .. autoclass:: axisutilities.FixedIntervalAxisBuilder
 
+Rolling Window Axis Builder
++++++++++++++++++++++++++++
+.. autoclass:: axisutilities.RollingWindowAxisBuilder
+
 Time Axis Builders
 ^^^^^^^^^^^^^^^^^^
 

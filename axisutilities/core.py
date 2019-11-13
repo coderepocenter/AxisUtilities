@@ -95,9 +95,10 @@ class Axis:
     value. In some calculations this data tick is needed.
 
     There are multiple way of creating an axis:
+
     - Using Axis Object directly, or
     - Using one of the builder functions that are provided. These builder functions provide an easier way to create
-    some well-known axis.
+      some well-known axis.
 
     For example, to create a 7 day daily time axis, you could either calculate the upper bound and lower bound along
     with other information and pass it to `Axis` initializer, or you could use `DailyTimeAxisBuilder` class which
@@ -128,8 +129,8 @@ class Axis:
         ...             data_ticks=data_ticks)
 
         * Creating axis by passing upper/lower bound and defining the fraction: The following example is essentially the
-        same as before, except that instead of manually defining the data ticks to be in the middle of (between) upper
-        and lower bound we pass the fraction as 0.5 and the data ticks are calculated accordingly.
+          same as before, except that instead of manually defining the data ticks to be in the middle of (between) upper
+          and lower bound we pass the fraction as 0.5 and the data ticks are calculated accordingly.
 
         >>> from axisutilities import Axis
         >>> lower_bound = [i * 24 for i in range(7)]
@@ -139,8 +140,8 @@ class Axis:
         ...             fraction=0.5)
 
         * Creating axis by passing upper/lower bound and defining the bindings: If the data ticks are at the beginning,
-        end or in the middle of the interval, instead of passing fraction as 0, 1, or 0.5, the alternative approach is
-        to pass the binding by name:
+          end or in the middle of the interval, instead of passing fraction as 0, 1, or 0.5, the alternative approach is
+          to pass the binding by name:
 
         >>> axis = Axis(lower_bound=lower_bound,
         ...             upper_bound=upper_bound,
@@ -153,7 +154,7 @@ class Axis:
         ...             binding="end")
 
         * Creating axis using variable fraction: The fraction does not need to be the same for all data ticks and
-        it can change from one data element to another.
+          it can change from one data element to another.
 
         >>> from numpy.random import random
         >>> fraction = random(7)
@@ -162,8 +163,8 @@ class Axis:
         ...             fraction=fraction)
 
         * creating axis using one of the builder functions: There are numerous builder function that you could harness
-        to quickly build your axis object. For example, to create a daily time axis for one year, instead of calculating
-        and providing the upper and lower bounds manually, you could do:
+          to quickly build your axis object. For example, to create a daily time axis for one year, instead of calculating
+          and providing the upper and lower bounds manually, you could do:
 
         >>> from datetime import date
         >>> from axisutilities import DailyTimeAxisBuilder
@@ -252,6 +253,7 @@ class Axis:
 
         examples:
             * Converting to Dictionary:
+
             >>> axis.asDict()
             {'nelem': 7, 'lower_bound': [0, 24, 48, 72, 96, 120, 144],
             'upper_bound': [24, 48, 72, 96, 120, 144, 168],

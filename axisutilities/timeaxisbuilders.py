@@ -7,7 +7,7 @@ from typing import Iterable
 import numpy as np
 
 from axisutilities import Axis
-from axisutilities.axisbuilder import AxisBuilder, FixedIntervalAxisBuilder
+from axisutilities.axisbuilder import AxisBuilder, FixedIntervalAxisBuilder, RollingWindowAxisBuilder
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
@@ -217,114 +217,99 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
             raise ValueError("Unrecognized boundary type.")
 
 
-class RollingWindowTimeAxisBuilder(TimeAxisBuilder):
+class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
     """
-    Creates a Rolling Window Time Axis
+    Creates a Rolling Window Time Axis. This is similar to `RollingWindowAxisBuilder` except that you
+    could provide a `date` or `datetime` object for the start and end in addition what you where able to
+    provide before; also, for the base you could provide a `deltatime` object. Furthermore, `RollingWindowAxisBuilder`
+    did not have any default value for `base`; but `RollingWindowTimeAxisBuilder` has a default value of one day
+    for the `base` which is stored as microsecond.
+
+    **NOTE:** if a `date` or a `datetime` object is provided for, `start_date`, and `end_date` or if a `deltatime`
+    object is provided for the `base`, they are all converted to microseconds. So make sure if you are mixing these
+    with other numbers, you do have a consistent number or unit. For example, if you are providing the start_date
+    but then providing the `base` manually as an integer number, make sure that the `base` is in microsecond.
     """
     def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.set_start_date(kwargs.get("start_date", None))
         self.set_end_date(kwargs.get("end_date", None))
-        self.set_n_window(kwargs.get("n_window", None))
-        self.set_window_size(kwargs.get("window_size", None))
-        self.set_base_dt(kwargs.get("base_dt", int(timedelta(days=1).total_seconds()) * SECONDS_TO_MICROSECONDS_FACTOR))
+        self.set_base(kwargs.get("base", int(timedelta(days=1).total_seconds()) * SECONDS_TO_MICROSECONDS_FACTOR))
 
     def set_start_date(self, start_date: date) -> RollingWindowTimeAxisBuilder:
-        if (start_date is None) or isinstance(start_date, date):
-            self._start_date = start_date
+        if isinstance(start_date, date):
+            self._start = TimeAxisBuilder.datetime_to_timestamp(start_date)
+        elif (start_date is None):
+            self._start = None
         else:
             raise TypeError("start_date must be of type date")
 
         return self
 
     def set_end_date(self, end_date: date) -> RollingWindowTimeAxisBuilder:
-        if (end_date is None) or isinstance(end_date, date):
-            self._end_date = end_date
+        if isinstance(end_date, date):
+            self._end = TimeAxisBuilder.datetime_to_timestamp(end_date)
+        elif (end_date is None):
+            self._end = None
         else:
             raise TypeError("end_date must be of type date")
         return self
 
-    def set_n_window(self, n_window: int) -> RollingWindowTimeAxisBuilder:
-        if isinstance(n_window, int):
-            if n_window > 0:
-                self._n_window = n_window
-            else:
-                raise ValueError("n_window must be a non-zero and positive integer.")
-        elif n_window is None:
-            self._n_window = None
+    def set_base(self, base: (int, timedelta)):
+        if isinstance(base, timedelta):
+            self._base = timedelta.total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR
         else:
-            raise TypeError("n_window must be an int")
+            try:
+                super().set_base(base)
+            except TypeError:
+                raise TypeError("base must be of type timedelta, a positive integer number, or "
+                                "of an integral type that is positive.")
 
         return self
 
-    def set_window_size(self, window_size: int):
-        if isinstance(window_size, int):
-            if (window_size > 0) or (window_size % 2 != 1):
-                self._window_size = window_size
-            else:
-                raise ValueError("window_size must be an odd positive number.")
-        elif window_size is None:
-            self._window_size = None
-        else:
-            raise TypeError("window_size must be an int")
-
-        return self
-
-    def set_base_dt(self, base_dt: int):
-        if isinstance(base_dt, int):
-            if base_dt > 1:
-                self._base_dt = base_dt
-            else:
-                raise ValueError("base_dt must be a positive integer.")
-        elif base_dt is None:
-            self._base_dt = None
-        else:
-            raise TypeError("base_dt must be an int")
-
-        return self
-
-    def prebuild_check(self) -> (bool, Exception):
-        if self._start_date is None:
-            raise ValueError("start_date is not provided.")
-
-        if self._base_dt is None:
-            raise ValueError("Some how base_dt ended up to be None. It cannot be None")
-
-        if self._window_size is None:
-            raise ValueError("Window_size is not provided. window_size must a positive integer.")
-
-        if (self._n_window is not None) and (self._end_date is not None):
-            raise ValueError("You could provide either the end_date or the n_window; but not both.")
-
-        if (self._n_window is None) and (self._end_date is None):
-            raise ValueError("Neither end_date nor the n_window is provided. "
-                             "You must provide exactly one of them.")
-
-        if (self._start_date is not None) and (self._end_date is not None) and (self._start_date > self._end_date):
-            raise ValueError("start_date must be before end_date.")
-
-        return True
-
-    def build(self) -> Axis:
-        if self.prebuild_check():
-            if self._end_date is not None:
-                self._n_window = np.ceil(
-                    (TimeAxisBuilder.datetime_to_timestamp(self._end_date) -
-                     TimeAxisBuilder.datetime_to_timestamp(self._start_date)) / self._base_dt
-                ) - (self._window_size - 1)
-                if self._n_window < 1:
-                    raise ValueError("the provided end_date and start_date resulted in 0 n_window.")
-
-            lower_bound = TimeAxisBuilder.datetime_to_timestamp(self._start_date) + \
-                          np.arange(self._n_window, dtype="int64") * self._base_dt
-
-            window_length = self._window_size * self._base_dt
-            upper_bound = lower_bound + window_length
-            data_tick = 0.5 * (lower_bound + upper_bound)
-            return Axis(
-                lower_bound=lower_bound,
-                upper_bound=upper_bound,
-                data_ticks=data_tick
-            )
+    # def prebuild_check(self) -> (bool, Exception):
+    #     if self._start_date is None:
+    #         raise ValueError("start_date is not provided.")
+    #
+    #     if self._base_dt is None:
+    #         raise ValueError("Some how base_dt ended up to be None. It cannot be None")
+    #
+    #     if self._window_size is None:
+    #         raise ValueError("Window_size is not provided. window_size must a positive integer.")
+    #
+    #     if (self._n_window is not None) and (self._end_date is not None):
+    #         raise ValueError("You could provide either the end_date or the n_window; but not both.")
+    #
+    #     if (self._n_window is None) and (self._end_date is None):
+    #         raise ValueError("Neither end_date nor the n_window is provided. "
+    #                          "You must provide exactly one of them.")
+    #
+    #     if (self._start_date is not None) and (self._end_date is not None) and (self._start_date > self._end_date):
+    #         raise ValueError("start_date must be before end_date.")
+    #
+    #     return True
+    #
+    # def build(self) -> Axis:
+    #     if self.prebuild_check():
+    #         if self._end_date is not None:
+    #             self._n_window = np.ceil(
+    #                 (TimeAxisBuilder.datetime_to_timestamp(self._end_date) -
+    #                  TimeAxisBuilder.datetime_to_timestamp(self._start_date)) / self._base_dt
+    #             ) - (self._window_size - 1)
+    #             if self._n_window < 1:
+    #                 raise ValueError("the provided end_date and start_date resulted in 0 n_window.")
+    #
+    #         lower_bound = TimeAxisBuilder.datetime_to_timestamp(self._start_date) + \
+    #                       np.arange(self._n_window, dtype="int64") * self._base_dt
+    #
+    #         window_length = self._window_size * self._base_dt
+    #         upper_bound = lower_bound + window_length
+    #         data_tick = 0.5 * (lower_bound + upper_bound)
+    #         return Axis(
+    #             lower_bound=lower_bound,
+    #             upper_bound=upper_bound,
+    #             data_ticks=data_tick
+    #         )
 
 
 class MonthlyTimeAxisBuilder(TimeAxisBuilder):

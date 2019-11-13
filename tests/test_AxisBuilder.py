@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from unittest import TestCase
 
 from axisutilities import FixedIntervalAxisBuilder, IntervalBaseAxisBuilder
+from axisutilities.axisbuilder import RollingWindowAxisBuilder
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
@@ -212,6 +213,113 @@ class TestFixedIntervalAxisBuilder(TestCase):
         )
 
         self.assertEqual(0.5, axis.fraction[0, 0], 1)
+
+
+class TestRollingWindowAxisBuilder(TestCase):
+    def test_build_00(self):
+        axis = RollingWindowAxisBuilder()\
+            .set_start(0)\
+            .set_base(24)\
+            .set_window_size(3)\
+            .set_end(7*24)\
+            .build()
+
+        self.assertEqual(5, axis.nelem)
+        self.assertListEqual(
+            [0, 24, 48, 72, 96],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [72, 96, 120, 144, 168],
+            axis.upper_bound.flatten().tolist()
+        )
+
+    def test_build_01(self):
+        axis = RollingWindowAxisBuilder(
+            start=0,
+            end=7*24,
+            base=24,
+            window_size=3
+        ).build()
+
+        self.assertEqual(5, axis.nelem)
+        self.assertListEqual(
+            [0, 24, 48, 72, 96],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [72, 96, 120, 144, 168],
+            axis.upper_bound.flatten().tolist()
+        )
+
+    def test_build_02(self):
+        axis = RollingWindowAxisBuilder(
+            start=0,
+            base=24,
+            window_size=3,
+            n_window=5
+        ).build()
+
+        self.assertEqual(5, axis.nelem)
+        self.assertListEqual(
+            [0, 24, 48, 72, 96],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [72, 96, 120, 144, 168],
+            axis.upper_bound.flatten().tolist()
+        )
+
+    def test_build_03(self):
+        with self.assertRaises(ValueError):
+            RollingWindowAxisBuilder(
+                start=0,
+                base=24,
+                window_size=3,
+                n_window=5,
+                end=7*24  # Both n_window and end are provided.
+            ).build()
+
+    def test_build_04(self):
+        with self.assertRaises(ValueError):
+            RollingWindowAxisBuilder(
+                start=7*24,  # start is after end
+                end=0,
+                base=24,
+                window_size=3
+            ).build()
+
+    def test_build_05(self):
+        with self.assertRaises(ValueError):
+            RollingWindowAxisBuilder(
+                start=0,
+                end=7*24,
+                base=24,
+                window_size=4  # even window_size
+            ).build()
+
+    def test_build_06(self):
+        with self.assertRaises(ValueError):
+            RollingWindowAxisBuilder(
+                start=0,
+                end=7*24,
+                base=24,
+                window_size=-3  # negative window_size
+            ).build()
+
+    def test_build_07(self):
+        with self.assertRaises(TypeError):
+            RollingWindowAxisBuilder(
+                start=0,
+                end=7*24,
+                base=24,
+                window_size='I try to be an integral'  # Non-castable to int
+            ).build()
+
+
 
 
 
