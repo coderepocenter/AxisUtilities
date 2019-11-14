@@ -102,6 +102,22 @@ class TestDailyTimeAxisBuilder(TestCase):
         self.assertEqual("2019-01-06 12:00:00", ta[-2].asDict()["data_tick"])
         self.assertEqual("2019-01-07 12:00:00", ta[-1].asDict()["data_tick"])
 
+    def test_build_06(self):
+        axis = DailyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019,1, 8)
+        ).build()
+
+        self.assertListEqual(
+            [1546326000000000, 1546412400000000, 1546498800000000, 1546585200000000, 1546671600000000, 1546758000000000, 1546844400000000],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [1546412400000000, 1546498800000000, 1546585200000000, 1546671600000000, 1546758000000000, 1546844400000000, 1546930800000000],
+            axis.upper_bound.flatten().tolist()
+        )
+
 
 class TestWeeklyTimeAxisBuilder(TestCase):
     @classmethod

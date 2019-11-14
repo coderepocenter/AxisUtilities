@@ -105,7 +105,7 @@ that the first dimension is the time dimension. If the time dimension (source ax
 you could define it as follows:
 
 ```python
-to_data = tc.average(from_data, time_dimension=n)
+to_data = tc.average(from_data, dimension=n)
 ```
 
 where `n` is the time dimension (or source axis if the axis you have created is not time).
@@ -210,20 +210,22 @@ to_data = tc.apply_function(from_data, np.nanstd)
 that is conisdered `Callable` within Python.
 - Note that instead of passing `np.std`, we are passing the version of the function that handles the `NaN`. The 
 function that you pass must handle the `NaN` and missing values properly. If you pass the regular standard deviation and
-your source data contains `NaN` your converted results would become also NaN.
+your source data contains `NaN` your converted results would become also NaN. Also note that the function is forced
+to performed the operation along axis=0; These are the requirements.
 You could pass any function that you want:
 
 ```python
 tc = AxisConverter(from_axis=daily_axis, to_axis=monthly_axis)
 
 def myfunction(data):
-    return np.nansum(data) * 42
+    return np.nansum(data, axis=0) * 42
 
 to_data = tc.apply_function(from_data, myfunction)
 ```
 
-Again, pay attention that when passing `myfunctoin` there is no parenthesis and we are handling the `NaN` inside
-the function by using `np.nansum` instead of `np.sum`. 
+Again, pay attention that when passing `myfunction` there is no parenthesis and we are handling the `NaN` inside
+the function by using `np.nansum` instead of `np.sum`. Also, pay attention to the `axis=0`; The user-defined function
+must perform it's operation along this axis only.
 
 # Authors:
 - Abouali, Mohammad (maboualidev@gmail.com; mabouali@ucar.edu)

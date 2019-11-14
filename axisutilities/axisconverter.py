@@ -10,6 +10,96 @@ from axisutilities import Axis
 
 
 class AxisConverter:
+    """
+    `AxisConverter` facilitates conversion between two one-dimensional axis. Originally the idea started for performing
+    various conversion between time axis. For example, let's say you have a hourly data and you want to average it to
+    daily data. Or you have a daily data and you want to average it to weekly, monthly, or yearly data. Or may be you
+    want to calculate daily minimum and maximum from an hourly data. However, since the same concept could be applied
+    to any one-dimensional axis, the usage was generalized and the name was chaned to `AxisConverter`.
+
+    `AxisConverter` caches bulk of the computations. Hence, once you create an object of the `AxisConverter` you could
+    reuse it; hence, avoid re-doing certain computations, as long as the source/origin axis and the destination axis
+    remain the same.
+
+    `AxisConverter` applies the calculation on multi-dimensional data as well. By default, it assumes that the axis is
+    the first dimension. If it is not the case, you could define the axis that that the conversion needs to happen.
+
+    Currently it supports calculating `average`, `minimum`, `maximum`, or any user defined function (any Python
+    Callable object).
+
+    Examples:
+
+        * Creating an `AxisConverter` and calculating average:
+
+        >>> from axisutilities import AxisConverter
+        >>> from axisutilities import DailyTimeAxisBuilder
+        >>> from axisutilities import WeeklyTimeAxisBuilder
+        >>> from datetime import date
+        >>> daily_axis = DailyTimeAxisBuilder(
+        ...     start_date=date(2019, 1, 1),
+        ...     n_interval=14
+        ... ).build()
+        >>> weekly_axis = WeeklyTimeAxisBuilder(
+        ...     start_date=date(2019, 1, 1),
+        ...     n_interval=2
+        ... ).build()
+        >>> ac = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        >>> # Creating some random data
+        ... import numpy as np
+        >>> daily_data = np.random.random((14,1))
+        >>> weekly_avg = ac.average(daily_data)
+        >>> weekly_avg
+        array([[0.71498815],
+               [0.60443017]])
+        >>> # creating a multidimensional data
+        ... daily_data = np.random.random((14, 3, 4, 5))
+        >>> weekly_avg = ac.average(daily_data)
+        >>> weekly_avg.shape
+        (2, 3, 4, 5)
+        >>> # creating a multi-dimensional data with the axis being the last dimension
+        ... daily_data = np.random.random((3, 4, 5, 14))
+        >>> weekly_avg = ac.average(daily_data,dimension=3)
+        >>> weekly_avg.shape
+        (3, 4, 5, 2)
+        >>> # Calculating min and max:
+        ... weekly_min = ac.min(data)
+        >>> weekly_min
+        array([[0.19497718],
+               [0.014242  ]])
+        >>> weekly_max = ac.max(data)
+        >>> weekly_max
+        array([[0.99156943],
+               [0.64039361]])
+
+
+        * Applying a user-defined function:
+
+        >>> from axisutilities import AxisConverter
+        >>> from axisutilities import DailyTimeAxisBuilder
+        >>> from axisutilities import WeeklyTimeAxisBuilder
+        >>> from datetime import date
+        >>> import numpy as np
+        >>>
+        >>> daily_axis = DailyTimeAxisBuilder(
+        ...     start_date=date(2019, 1, 1),
+        ...     n_interval=14
+        ... ).build()
+        >>>
+        >>> weekly_axis = WeeklyTimeAxisBuilder(
+        ...     start_date=date(2019, 1, 1),
+        ...     n_interval=2
+        ... ).build()
+        >>>
+        >>> ac = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        >>>
+        >>> def user_defined_function(data):
+        ...     return np.nansum(data, axis=0) * 42
+        ...
+        >>> daily_data = np.random.random((3, 4, 5, 14))
+        >>>
+        >>> weekly_user_defined = ac.apply_function(daily_data, user_defined_function, dimension=3)
+
+    """
     def __init__(self, **kwargs) -> None:
         if ("from_axis" in kwargs) and ("to_axis" in kwargs):
             from_ta = kwargs["from_axis"]
@@ -93,8 +183,8 @@ class AxisConverter:
     def _prep_output_data( out_data: np.ndarray, time_dimension, trailing_shape: tuple):
         return np.moveaxis(out_data.reshape((out_data.shape[0], *trailing_shape)), 0, time_dimension)
 
-    def average(self, from_data: Iterable, time_dimension=0) -> np.ndarray:
-        from_data_copy, trailing_shape = self._prep_input_data(from_data, time_dimension)
+    def average(self, from_data: Iterable, dimension=0) -> np.ndarray:
+        from_data_copy, trailing_shape = self._prep_input_data(from_data, dimension)
 
         nan_mask = np.isnan(from_data_copy)
         non_nan_mask = np.ones(from_data_copy.shape, dtype=np.int8)
@@ -105,12 +195,12 @@ class AxisConverter:
 
         return self._prep_output_data(
             np.multiply(self._weight_matrix * from_data_copy, inverse_sum_effective_weights),
-            time_dimension,
+            dimension,
             trailing_shape
         )
 
-    def apply_function(self, data: Iterable, func2apply: Callable, time_dimension=0):
-        data_copy, trailing_shape = self._prep_input_data(data, time_dimension)
+    def apply_function(self, data: Iterable, func2apply: Callable, dimension=0):
+        data_copy, trailing_shape = self._prep_input_data(data, dimension)
 
         if isinstance(func2apply, Callable):
             import warnings
@@ -126,22 +216,22 @@ class AxisConverter:
 
         return self._prep_output_data(
             output,
-            time_dimension,
+            dimension,
             trailing_shape
         )
 
-    def min(self, data, time_dimension=0):
+    def min(self, data, dimension=0):
         return self.apply_function(
             data,
-            np.nanmin,
-            time_dimension
+            lambda e: np.nanmin(e, axis=0),
+            dimension
         )
 
-    def max(self, data, time_dimension=0):
+    def max(self, data, dimension=0):
         return self.apply_function(
             data,
-            np.nanmax,
-            time_dimension
+            lambda e: np.nanmax(e, axis=0),
+            dimension
         )
 
 
@@ -197,6 +287,8 @@ class AxisConverter:
 
         # TODO: turn this into cython so that is faster and/or use some sort of data structure to
         #       reduce its time-complexity from O(mn)
+        # TODO: Move this to Interval; From OOP stand point it makes more sense to have some of these functionalities
+        #       as part of that class/object.
         row_idx = []
         col_idx = []
         weights = []
@@ -239,7 +331,7 @@ def _apply_function_core(n: int, _weight_matrix: csr_matrix, data_copy: np.ndarr
         end = _weight_matrix.indptr[r + 1]
         if not (np.isnan(_weight_matrix[r, 0]) and ((end - start) == 1)):
             row_mask = _weight_matrix.indices[start:end]
-            output[r, :] = func(data_copy[row_mask, :], axis=0)
+            output[r, :] = func(data_copy[row_mask, :])
     return output
 
 

@@ -117,20 +117,117 @@ class DailyTimeAxisBuilder(BaseCommonKnownIntervals):
     As the name suggests, `DailyTimeAxisBuilder` creates a daily time axis.
     At minimum, you would need to provide two of the following configurations:
 
-    - start_date: defining where
+    - start_date: defining when the axis starts
+    - end_date: defining when the axis ends
+    - n_interval: defining how many intervals should there be in the axis, i.e. number of elements.
+
+    **NOTE:** You could provide only two out of the three parameters above. Not more; even if they are consistent.
+
+    Examples:
+        * Create a Daily time axis for one week:
+
+        >>> from axisutilities import DailyTimeAxisBuilder
+        >>> from datetime import date
+        >>> axis = DailyTimeAxisBuilder() \
+        ...             .set_start_date(date(2019,1,1)) \
+        ...             .set_end_date(date(2019,1,8)) \
+        ...             .build()
+        >>> axis.nelem
+        7
+        >>> axis.lower_bound
+        array([[1546326000000000, 1546412400000000, 1546498800000000,
+                1546585200000000, 1546671600000000, 1546758000000000,
+                1546844400000000]])
+        >>> axis.upper_bound
+        array([[1546412400000000, 1546498800000000, 1546585200000000,
+                1546671600000000, 1546758000000000, 1546844400000000,
+                1546930800000000]])
+
+        * Creating a Daily time axis for one week, but using a pattern more familiar in Python:
+
+        >>> from axisutilities import DailyTimeAxisBuilder
+        >>> from datetime import date
+        >>> axis = DailyTimeAxisBuilder(
+        ...     start_date=date(2019, 1, 1),
+        ...     end_date=date(2019,1, 8)
+        ... ).build()
+        >>> axis.nelem
+        7
+        >>> axis.lower_bound
+        array([[1546326000000000, 1546412400000000, 1546498800000000,
+                1546585200000000, 1546671600000000, 1546758000000000,
+                1546844400000000]])
+        >>> axis.upper_bound
+        array([[1546412400000000, 1546498800000000, 1546585200000000,
+                1546671600000000, 1546758000000000, 1546844400000000,
+                1546930800000000]])
+
+        * Creating the same axis but using `n_interval`:
+
+        >>> from axisutilities import DailyTimeAxisBuilder
+        >>> from datetime import date
+        >>> axis = DailyTimeAxisBuilder(
+        ...     start_date=date(2019, 1, 1),
+        ...     n_interval=7
+        ... ).build()
+
     """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     @staticmethod
     def get_dt() -> int:
         return int(timedelta(days=1).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
 
 
 class WeeklyTimeAxisBuilder(BaseCommonKnownIntervals):
+    """
+        As the name suggests, `WeeklyTimeAxisBuilder` creates a Weekly time axis, i.e. each element of the axis, covers
+        one week. At minimum, you would need to provide two of the following configurations:
+
+        - start_date: defining when the axis starts
+        - end_date: defining when the axis ends
+        - n_interval: defining how many intervals should there be in the axis, i.e. number of elements.
+
+        **NOTE:** You could provide only two out of the three parameters above. Not more; even if they are consistent.
+
+        Examples:
+            * creating a two week span weekly time axis, i.e. two elements only:
+
+            >>> axis = WeeklyTimeAxisBuilder(
+            ...     start_date=date(2019,1,1),
+            ...     end_date=date(2019,1,15)
+            ... ).build()
+            >>> axis.lower_bound
+            array([[1546326000000000, 1546930800000000]])
+            >>> axis.upper_bound
+            array([[1546930800000000, 1547535600000000]])
+
+            * Creating the same axis as above but differently:
+
+            >>> axis = WeeklyTimeAxisBuilder(
+            ...     start_date=date(2019,1,1),
+            ...     n_interval=2
+            ... ).build()
+            >>> axis.lower_bound
+            array([[1546326000000000, 1546930800000000]])
+            >>> axis.upper_bound
+            array([[1546930800000000, 1547535600000000]])
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     @staticmethod
     def get_dt() -> int:
         return int(timedelta(days=7).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
 
 
 class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
+    """
+    Creates a data axis from data ticks. You would need to provide extra information, i.e. `boundary_type` so
+    that the object recognizes how to construct the upper and lower bounds.
+    """
     _acceptable_boundary_types = {
         "centered"
     }
@@ -187,7 +284,8 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
     @staticmethod
     def _calculate_bounds(
             data_ticks: np.ndarray,
-            boundary_type: str = "centered") -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+            boundary_type: str = "centered",
+            **kwargs) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
         if not isinstance(data_ticks, np.ndarray):
             raise TypeError("This method only accepts numpy.ndarry.")
@@ -221,6 +319,11 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
             return lower_boundary, data_ticks, upper_boundary
         else:
             raise ValueError("Unrecognized boundary type.")
+
+    @staticmethod
+    def from_xarray():
+        # TODO
+        pass
 
 
 class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):

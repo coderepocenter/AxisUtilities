@@ -233,7 +233,7 @@ class TestTimeAxisConverter(TestCase):
 
         from_data = np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14))
 
-        to_data = tc.average(from_data, time_dimension=2)
+        to_data = tc.average(from_data, dimension=2)
 
         self.assertEqual((3, 4, 2), to_data.shape)
 
@@ -262,7 +262,7 @@ class TestTimeAxisConverter(TestCase):
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1)
 
-        to_data = tc.average(from_data, time_dimension=1)
+        to_data = tc.average(from_data, dimension=1)
 
         self.assertEqual((3, 2, 4), to_data.shape)
 
@@ -291,7 +291,7 @@ class TestTimeAxisConverter(TestCase):
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
-        to_data = tc.average(from_data, time_dimension=1)
+        to_data = tc.average(from_data, dimension=1)
 
         self.assertEqual((3, 2, 4), to_data.shape)
 
@@ -432,7 +432,7 @@ class TestTimeAxisConverter(TestCase):
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
-        to_data = tc.min(from_data, time_dimension=1)
+        to_data = tc.min(from_data, dimension=1)
 
         self.assertTrue(
             np.all(
@@ -461,7 +461,7 @@ class TestTimeAxisConverter(TestCase):
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
-        to_data = tc.min(from_data, time_dimension=1)
+        to_data = tc.min(from_data, dimension=1)
 
         for i in range(tc.to_nelem):
             self.assertTrue(
@@ -554,7 +554,7 @@ class TestTimeAxisConverter(TestCase):
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
-        to_data = tc.max(from_data, time_dimension=1)
+        to_data = tc.max(from_data, dimension=1)
 
         self.assertTrue(
             np.all(
@@ -583,7 +583,7 @@ class TestTimeAxisConverter(TestCase):
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
-        to_data = tc.max(from_data, time_dimension=1)
+        to_data = tc.max(from_data, dimension=1)
 
         for i in range(tc.to_nelem):
             self.assertTrue(
@@ -613,6 +613,25 @@ class TestTimeAxisConverter(TestCase):
         self.assertAlmostEqual(14.0, to_data[1, 0], 0)
         self.assertTrue(np.isnan(to_data[2, 0]))
 
+    def test_apply_function_01(self):
+        daily_axis = DailyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=14
+        ).build()
+
+        weekly_axis = WeeklyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        ).build()
+
+        ac = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+
+        daily_data = np.random.random((3, 4, 5, 14))
+
+        def user_defined_function(data):
+            return np.nansum(data, axis=0) * 42
+
+        weekly_user_defined = ac.apply_function(daily_data, user_defined_function, dimension=3)
 
     @skip
     def test_speed_01(self):
