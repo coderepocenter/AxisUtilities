@@ -113,6 +113,12 @@ class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
 
 
 class DailyTimeAxisBuilder(BaseCommonKnownIntervals):
+    """
+    As the name suggests, `DailyTimeAxisBuilder` creates a daily time axis.
+    At minimum, you would need to provide two of the following configurations:
+
+    - start_date: defining where
+    """
     @staticmethod
     def get_dt() -> int:
         return int(timedelta(days=1).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
