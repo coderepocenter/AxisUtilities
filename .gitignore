@@ -341,3 +341,6 @@ venv.bak/
 # Sphinx
 docs/_build
 .vscode/
+
+
+.DS_Store

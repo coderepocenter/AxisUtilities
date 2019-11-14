@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from unittest import TestCase
 
 from axisutilities import FixedIntervalAxisBuilder, IntervalBaseAxisBuilder
@@ -7,6 +7,11 @@ from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
 class TestIntervalBaseAxisBuilder(TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        import os
+        os.environ['TZ'] = 'MST'
+
     def test_build_00(self):
         axis = IntervalBaseAxisBuilder()\
             .set_start(0)\
@@ -111,8 +116,8 @@ class TestFixedIntervalAxisBuilder(TestCase):
         os.environ['TZ'] = 'MST'
 
     def test_build_00(self):
-        start = int(datetime(2019, 1, 1).timestamp() * SECONDS_TO_MICROSECONDS_FACTOR)
-        end = int(datetime(2019, 1, 8).timestamp() * SECONDS_TO_MICROSECONDS_FACTOR)
+        start = int(datetime.strptime(date(2019, 1, 1).strftime("%c"), "%c").timestamp() * SECONDS_TO_MICROSECONDS_FACTOR)
+        end = int(datetime.strptime(date(2019, 1, 8).strftime("%c"), "%c").timestamp() * SECONDS_TO_MICROSECONDS_FACTOR)
         interval = int(timedelta(days=1).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
         ta = FixedIntervalAxisBuilder()\
             .set_start(start)\
