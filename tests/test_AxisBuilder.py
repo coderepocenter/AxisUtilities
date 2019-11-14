@@ -7,6 +7,11 @@ from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
 class TestIntervalBaseAxisBuilder(TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        import os
+        os.environ['TZ'] = 'MST'
+
     def test_build_00(self):
         axis = IntervalBaseAxisBuilder()\
             .set_start(0)\
