@@ -200,6 +200,83 @@ class AxisConverter:
         )
 
     def apply_function(self, data: Iterable, func2apply: Callable, dimension=0):
+        """
+        Applies a user-defined/provided function for the conversion.
+
+        :param data: The data on the source-axis that needs to be converted to the destination axis using the
+                     user-provided function.
+        :param func2apply: The user provided function. This function should assume that it will receives a `m` by `s`
+                           matrix and it should return `1` by `s` output data. It should also handle the `NaN` or
+                           missing values properly.
+        :param dimension: The dimension where the source axis is. By default, it is assumed that the first dimension
+                          is the source axis.
+        :return: a data with the same number of dimension of the input, where each element is the result of the user
+                 defined function. All the dimensions are the same as the input data except the source axis. The source
+                 axis is turned into the destination axis; which means, it's location in the dimension is the same, but
+                 it's size has changed to reflect that of the destination axis. For example, if you have 4 dimensional
+                 input, and the source axis is the second dimension, the output would be still 4 dimensional and the
+                 destination axis would be still the second dimension. But the second dimension between the input and
+                 output might have different numbers depending on the axis.
+
+        Examples:
+            * Let's say we have a daily data, and we want to calculate coefficient of variation (CV) for each month.
+              This is the proper way of defining the function:
+
+            >>> from axisutilities import DailyTimeAxisBuilder
+            >>> from axisutilities import MonthlyTimeAxisBuilder
+            >>> from axisutilities import AxisConverter
+            >>> from datetime import date
+            >>>
+            >>> # creating a daily axis with a span of one year
+            ... daily_axis = DailyTimeAxisBuilder(
+            ...     start_date=date(2019, 1, 1),
+            ...     end_date=date(2020, 1, 1)
+            ... ).build()
+            >>>
+            >>> # creating a monthly axis with a span of one year
+            ... monthly_axis = MonthlyTimeAxisBuilder(
+            ...     start_year=2019,
+            ...     end_year=2019
+            ... ).build()
+            >>>
+            >>> # constructing the AxisConverter object that conversts
+            ... # from the daily axis to the monthly axis.
+            ... ac = AxisConverter(from_axis=daily_axis, to_axis=monthly_axis)
+            >>>
+            >>> # creating some random data points
+            ... from numpy.random import random
+            >>> data = random((daily_axis.nelem, 90, 360))
+            >>> print("data.shape: ", data.shape)
+            data.shape:  (365, 90, 360)
+            >>>
+            >>> # now creating a function that calculates Coefficient of Variation (CV)
+            ... import numpy as np
+            >>> def cv(data):
+            ...     return np.nanstd(data, axis=0) / np.nanmean(data, axis=0)
+            ...
+            >>> # now calculating the monthly CV
+            ... monthly_cv = ac.apply_function(data, cv)
+            >>> print("monthly_cv.shape: ", monthly_cv.shape)
+            monthly_cv.shape:  (12, 90, 360)
+
+
+            Note how cv function was provided.
+
+            * Repeating the previous examples using lambda function: You do not need to have a named function to pass.
+              You could create anonymous function using Lambda expressions:
+
+            >>> monthly_cv_using_lambda = ac.apply_function(
+            ...     data,
+            ...     lambda e: np.nanstd(e, axis=0) / np.nanmean(e, axis=0)
+            ... )
+            >>> print("monthly_cv_using_lambda.shape: ", monthly_cv_using_lambda.shape)
+            monthly_cv_using_lambda.shape:  (12, 90, 360)
+            >>> np.min(monthly_cv_using_lambda - monthly_cv)
+            0.0
+            >>> np.max(monthly_cv_using_lambda - monthly_cv)
+            0.0
+
+        """
         data_copy, trailing_shape = self._prep_input_data(data, dimension)
 
         if isinstance(func2apply, Callable):
