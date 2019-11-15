@@ -43,24 +43,50 @@ class AxisConverter:
         ...     start_date=date(2019, 1, 1),
         ...     n_interval=2
         ... ).build()
+
+        Now we are ready to create an `AxisConverter` object:
+
         >>> ac = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+
+        Let's create some random data:
+
         >>> # Creating some random data
         ... import numpy as np
         >>> daily_data = np.random.random((14,1))
+
+        Now to convert from daily axis to weekly axis all we need to do is:
+
         >>> weekly_avg = ac.average(daily_data)
         >>> weekly_avg
         array([[0.71498815],
                [0.60443017]])
+
+        Let's create another random data; but this time make it multi-dimensional. Note that the first dimension
+        is the source axis.
+
         >>> # creating a multidimensional data
         ... daily_data = np.random.random((14, 3, 4, 5))
+
+        Now we could convert this new data using the same `AxisConverter` object that we created. No need to create
+        a new one. We could reuse it as long as the source and destination axis have not changed.
+
         >>> weekly_avg = ac.average(daily_data)
         >>> weekly_avg.shape
         (2, 3, 4, 5)
+
+        Lets create another multi-dimensional data where the first dimension is not the source axis:
+
         >>> # creating a multi-dimensional data with the axis being the last dimension
         ... daily_data = np.random.random((3, 4, 5, 14))
+
+        You could still use the same `AxisConverter`; All you need to do is to tell what dimension is the source axis:
+
         >>> weekly_avg = ac.average(daily_data,dimension=3)
         >>> weekly_avg.shape
         (3, 4, 5, 2)
+
+        Similarly you could also calculate the weekly min and max:
+
         >>> # Calculating min and max:
         ... weekly_min = ac.min(data)
         >>> weekly_min
