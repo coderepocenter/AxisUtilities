@@ -2,6 +2,7 @@ from datetime import date
 from unittest import TestCase, skip
 
 import numpy as np
+import dask.array as da
 
 from axisutilities import Axis, AxisConverter, DailyTimeAxisBuilder, WeeklyTimeAxisBuilder, \
     RollingWindowTimeAxisBuilder, MonthlyTimeAxisBuilder
@@ -664,5 +665,142 @@ class TestTimeAxisConverter(TestCase):
         end = time.time()
 
         print(f"Took: %f [s]", end - start)
+
+    def test_dask_array_01(self):
+        daily_axis = DailyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=14
+        ).build()
+
+        weekly_axis = WeeklyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        ).build()
+
+        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+
+        from_data = da.arange(14)
+
+        to_data = tc.average(from_data)
+        self.assertTrue(isinstance(to_data, da.Array))
+        to_data = to_data.compute()
+
+        self.assertAlmostEqual(3.0, to_data[0, 0], 0)
+        self.assertAlmostEqual(10.0, to_data[1, 0], 0)
+
+    def test_dask_array_02(self):
+        daily_axis = DailyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=14
+        ).build()
+
+        weekly_axis = WeeklyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        ).build()
+
+        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+
+        from_data = da.from_array(
+            np.moveaxis(np.asarray(np.arange(14).tolist()*12).reshape(3, 4, 14), 2, 0)
+        )
+
+        to_data = tc.average(from_data)
+        self.assertTrue(isinstance(to_data, da.Array))
+        to_data = to_data.compute()
+
+        print(to_data)
+
+        np.testing.assert_almost_equal(
+            to_data,
+            np.asarray([3] * 12 + [10]*12).reshape(2, 3, 4)
+        )
+
+    def test_dask_array_03(self):
+        daily_axis = DailyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=14
+        ).build()
+
+        weekly_axis = WeeklyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        ).build()
+
+        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+
+        from_data = da.from_array(
+            np.asarray(np.arange(14).tolist()*12).reshape(3, 4, 14)
+        )
+
+        to_data = tc.average(from_data, 2)
+        self.assertTrue(isinstance(to_data, da.Array))
+        to_data = to_data.compute()
+
+        print(to_data)
+
+        np.testing.assert_almost_equal(
+            to_data,
+            np.moveaxis(np.asarray([3] * 12 + [10]*12).reshape(2, 3, 4), 0, 2)
+        )
+
+    def test_dask_array_04(self):
+        daily_axis = DailyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=14
+        ).build()
+
+        weekly_axis = WeeklyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        ).build()
+
+        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+
+        from_data = da.from_array(
+            np.moveaxis(np.asarray(np.arange(14).tolist()*12).reshape(3, 4, 14), 2, 0),
+            chunks=(14, 1, 1)
+        )
+
+        to_data = tc.average(from_data)
+        self.assertTrue(isinstance(to_data, da.Array))
+        to_data = to_data.compute()
+
+        print(to_data)
+
+        np.testing.assert_almost_equal(
+            to_data,
+            np.asarray([3] * 12 + [10]*12).reshape(2, 3, 4)
+        )
+
+    def test_dask_array_05(self):
+        daily_axis = DailyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=14
+        ).build()
+
+        weekly_axis = WeeklyTimeAxisBuilder(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        ).build()
+
+        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+
+        from_data = da.from_array(
+            np.moveaxis(np.asarray(np.arange(14).tolist()*12).reshape(3, 4, 14), 2, 0),
+            chunks=(2, 1, 1)
+        )
+
+        to_data = tc.average(from_data)
+        self.assertTrue(isinstance(to_data, da.Array))
+        to_data = to_data.compute()
+
+        print(to_data)
+
+        np.testing.assert_almost_equal(
+            to_data,
+            np.asarray([3] * 12 + [10]*12).reshape(2, 3, 4)
+        )
+
 
 

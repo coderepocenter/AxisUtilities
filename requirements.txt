@@ -2,3 +2,4 @@ numpy
 cftime
 scipy
 numba
+dask

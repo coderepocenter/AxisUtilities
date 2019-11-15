@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Iterable, Callable
 
 import numpy as np
+import dask.array as da
 from numba import prange
 from scipy.sparse import csr_matrix
 
@@ -181,7 +182,8 @@ class AxisConverter:
     def to_axis(self, v):
         pass
 
-    def _prep_input_data(self, in_data: Iterable, time_dimension) -> (np.ndarray, tuple):
+    @staticmethod
+    def _prep_input_data(in_data: Iterable, time_dimension, n) -> (np.ndarray, tuple):
         if not isinstance(in_data, Iterable):
             raise TypeError("input data should be an Iterable that can be casted to numpy.ndarray.")
 
@@ -191,8 +193,6 @@ class AxisConverter:
 
         if in_data_copy.ndim == 1:
             in_data_copy = in_data_copy.reshape((-1, 1))
-
-        n = self.from_nelem
 
         if in_data_copy.shape[time_dimension] != n:
             raise ValueError("The time dimension does not matches to that of the provided time converter.")
@@ -209,21 +209,48 @@ class AxisConverter:
     def _prep_output_data( out_data: np.ndarray, time_dimension, trailing_shape: tuple):
         return np.moveaxis(out_data.reshape((out_data.shape[0], *trailing_shape)), 0, time_dimension)
 
-    def average(self, from_data: Iterable, dimension=0) -> np.ndarray:
-        from_data_copy, trailing_shape = self._prep_input_data(from_data, dimension)
+    def average(self, from_data: Iterable, dimension=0):
+        if isinstance(from_data, Iterable):
+            return self._average(from_data, self._weight_matrix, dimension)
+        elif isinstance(from_data, da.Array):
+            shape = from_data.shape
+            chunksize = from_data.chunksize
+            if shape[dimension] != chunksize[dimension]:
+                new_chunksize = list(chunksize)
+                new_chunksize[dimension] = shape[dimension]
+                from_data = from_data.rechunk(tuple(new_chunksize))
+
+            return from_data.map_blocks(self._average, weights=self._weight_matrix, dimension=dimension, dtype=from_data.dtype)
+
+        else:
+            raise NotImplementedError()
+
+
+    @staticmethod
+    def _average(from_data: Iterable, weights: csr_matrix, dimension=0) -> np.ndarray:
+
+        from_data_copy, trailing_shape = AxisConverter._prep_input_data(from_data, dimension, weights.shape[1])
+
 
         nan_mask = np.isnan(from_data_copy)
         non_nan_mask = np.ones(from_data_copy.shape, dtype=np.int8)
         non_nan_mask[nan_mask] = 0
         from_data_copy[nan_mask] = 0
 
-        inverse_sum_effective_weights = np.reciprocal(self._weight_matrix * non_nan_mask)
 
-        return self._prep_output_data(
-            np.multiply(self._weight_matrix * from_data_copy, inverse_sum_effective_weights),
+
+        inverse_sum_effective_weights = np.reciprocal(weights * non_nan_mask)
+
+
+        output = AxisConverter._prep_output_data(
+            np.multiply(weights * from_data_copy, inverse_sum_effective_weights),
             dimension,
             trailing_shape
         )
+
+
+
+        return output
 
     def apply_function(self, data: Iterable, func2apply: Callable, dimension=0):
         """
@@ -303,7 +330,7 @@ class AxisConverter:
             0.0
 
         """
-        data_copy, trailing_shape = self._prep_input_data(data, dimension)
+        data_copy, trailing_shape = AxisConverter._prep_input_data(data, dimension, self._weight_matrix.shape[1])
 
         if isinstance(func2apply, Callable):
             import warnings
@@ -317,7 +344,7 @@ class AxisConverter:
         else:
             raise TypeError("func2apply must be a callable object that performs the calculation on axis=0.")
 
-        return self._prep_output_data(
+        return AxisConverter._prep_output_data(
             output,
             dimension,
             trailing_shape
