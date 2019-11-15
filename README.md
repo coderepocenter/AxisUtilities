@@ -51,6 +51,9 @@ benefit of this approach is in the reuse of the same computations, a.k.a. ***rem
 
 For some examples refer to the following examples or the API documentations.
 
+# Documentation
+For `AxisUtilities` documentation click [here](https://axisutilities.readthedocs.io/en/latest/?badge=latest).
+
 # Examples:
 ## Daily data averaged to weekly
 **Step 1:** Create a source Axis
