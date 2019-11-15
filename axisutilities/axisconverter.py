@@ -228,27 +228,20 @@ class AxisConverter:
 
     @staticmethod
     def _average(from_data: Iterable, weights: csr_matrix, dimension=0) -> np.ndarray:
-
         from_data_copy, trailing_shape = AxisConverter._prep_input_data(from_data, dimension, weights.shape[1])
-
 
         nan_mask = np.isnan(from_data_copy)
         non_nan_mask = np.ones(from_data_copy.shape, dtype=np.int8)
         non_nan_mask[nan_mask] = 0
         from_data_copy[nan_mask] = 0
 
-
-
         inverse_sum_effective_weights = np.reciprocal(weights * non_nan_mask)
-
 
         output = AxisConverter._prep_output_data(
             np.multiply(weights * from_data_copy, inverse_sum_effective_weights),
             dimension,
             trailing_shape
         )
-
-
 
         return output
 

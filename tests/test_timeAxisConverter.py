@@ -709,8 +709,6 @@ class TestTimeAxisConverter(TestCase):
         self.assertTrue(isinstance(to_data, da.Array))
         to_data = to_data.compute()
 
-        print(to_data)
-
         np.testing.assert_almost_equal(
             to_data,
             np.asarray([3] * 12 + [10]*12).reshape(2, 3, 4)
@@ -736,8 +734,6 @@ class TestTimeAxisConverter(TestCase):
         to_data = tc.average(from_data, 2)
         self.assertTrue(isinstance(to_data, da.Array))
         to_data = to_data.compute()
-
-        print(to_data)
 
         np.testing.assert_almost_equal(
             to_data,
@@ -766,8 +762,6 @@ class TestTimeAxisConverter(TestCase):
         self.assertTrue(isinstance(to_data, da.Array))
         to_data = to_data.compute()
 
-        print(to_data)
-
         np.testing.assert_almost_equal(
             to_data,
             np.asarray([3] * 12 + [10]*12).reshape(2, 3, 4)
@@ -794,8 +788,6 @@ class TestTimeAxisConverter(TestCase):
         to_data = tc.average(from_data)
         self.assertTrue(isinstance(to_data, da.Array))
         to_data = to_data.compute()
-
-        print(to_data)
 
         np.testing.assert_almost_equal(
             to_data,
