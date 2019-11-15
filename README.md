@@ -1,7 +1,8 @@
 [![CircleCI](https://circleci.com/gh/coderepocenter/AxisUtilities.svg?style=svg)](https://circleci.com/gh/coderepocenter/AxisUtilities)
 [![codecov](https://codecov.io/gh/coderepocenter/AxisUtilities/branch/master/graph/badge.svg)](https://codecov.io/gh/coderepocenter/AxisUtilities)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3543710.svg)](https://doi.org/10.5281/zenodo.3543710)
-
+[![Documentation Status](https://readthedocs.org/projects/axisutilities/badge/?version=latest)](https://axisutilities.readthedocs.io/en/latest/?badge=latest)
+ 
 
 
 
