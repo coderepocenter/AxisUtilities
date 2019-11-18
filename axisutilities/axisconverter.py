@@ -245,7 +245,26 @@ class AxisConverter:
 
         return output
 
-    def apply_function(self, data: Iterable, func2apply: Callable, dimension=0):
+    def apply_function(self, from_data: Iterable, func2apply: Callable, dimension=0):
+
+        if isinstance(from_data, Iterable):
+            return self._apply_function(from_data, func2apply, self.to_nelem, self._weight_matrix, dimension)
+        elif isinstance(from_data, da.Array):
+            shape = from_data.shape
+            chunksize = from_data.chunksize
+            if shape[dimension] != chunksize[dimension]:
+                new_chunksize = list(chunksize)
+                new_chunksize[dimension] = shape[dimension]
+                from_data = from_data.rechunk(tuple(new_chunksize))
+
+            return from_data.map_blocks(self._apply_function, func2apply=func2apply, to_nelem=self.to_nelem, weights=self._weight_matrix, dimension=dimension, dtype=from_data.dtype)
+
+        else:
+            raise NotImplementedError()
+
+    
+    @staticmethod
+    def _apply_function(data: Iterable, func2apply: Callable, to_nelem: int, weights: csr_matrix, dimension=0):
         """
         Applies a user-defined/provided function for the conversion.
 
@@ -323,16 +342,16 @@ class AxisConverter:
             0.0
 
         """
-        data_copy, trailing_shape = AxisConverter._prep_input_data(data, dimension, self._weight_matrix.shape[1])
+        data_copy, trailing_shape = AxisConverter._prep_input_data(data, dimension, weights.shape[1])
 
         if isinstance(func2apply, Callable):
             import warnings
             warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
             output = _apply_function_core(
-                self.to_nelem,
-                self._weight_matrix,
+                to_nelem,
+                weights,
                 data_copy,
-                func2apply.__call__
+                func2apply
             )
         else:
             raise TypeError("func2apply must be a callable object that performs the calculation on axis=0.")
