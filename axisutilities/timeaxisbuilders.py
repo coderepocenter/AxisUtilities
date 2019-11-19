@@ -454,7 +454,7 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
         ...         ).build()
 
     """
-    def __init__(self, start_year: int, end_year: int, start_month: int =1, end_month: int = 12):
+    def __init__(self, start_year: int, end_year: int, start_month: int = 1, end_month: int = 12):
         if (start_year is not None) and (start_month is not None):
             self.set_start_year_month(start_year, start_month)
         else:
@@ -512,6 +512,9 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
                 np.ones(n_month_in_last_year, dtype="int") * self._end.year
             ))
             month_list = (np.arange(n_months, dtype="int") + (self._start.month - 1)) % 12 + 1
+            for y, m in zip(year_list, month_list):
+                print(TimeAxisBuilder.datetime_to_timestamp(date(y, m, 1)))
+
             lower_bound = TimeAxisBuilder.datetime_to_timestamp(
                 [date(y, m, 1) for y, m in zip(year_list, month_list)]
             ).reshape((-1, ))
