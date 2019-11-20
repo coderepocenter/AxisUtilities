@@ -54,7 +54,7 @@ class Interval:
 
     @staticmethod
     def timestamp_to_datetime(ts: int) -> datetime:
-        return datetime.fromtimestamp(ts/SECONDS_TO_MICROSECONDS_FACTOR)
+        return datetime.utcfromtimestamp(ts/SECONDS_TO_MICROSECONDS_FACTOR)
 
     @property
     def lower_bound(self) -> int:

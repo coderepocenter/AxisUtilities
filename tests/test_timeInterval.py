@@ -9,25 +9,25 @@ class TestTimeInterval(TestCase):
         cls._sample_data = []
 
         # _sample_data[0]: everything is ok:
-        cls._sample_data.append([1546326000000000, 1546412400000000, 1546369200000000])
+        cls._sample_data.append([1546300800000000, 1546387200000000, 1546344000000000])
 
         # _sample_data[1]: upper_bound is smaller than lower_bound
-        cls._sample_data.append([1546412400000000, 1546326000000000, 1546369200000000])
+        cls._sample_data.append([1546387200000000, 1546300800000000, 1546344000000000])
 
         # _sample_data[2]: data_tick is less than lower_bound:
-        cls._sample_data.append([1546326000000000, 1546412400000000, 1546325000000000])
+        cls._sample_data.append([1546300800000000, 1546387200000000, 1546299800000000])
 
         # _sample_data[3]: data_tick is larger than the upper_bound:
-        cls._sample_data.append([1546326000000000, 1546412400000000, 1546412500000000])
+        cls._sample_data.append([1546300800000000, 1546387200000000, 1546387300000000])
 
         # _sample_data[4]: fraction is 0.25
-        cls._sample_data.append([1546326000000000, 1546412400000000, 1546347600000000])
+        cls._sample_data.append([1546300800000000, 1546387200000000, 1546322400000000])
 
         # _sample_data[5]: fraction is 0.0
-        cls._sample_data.append([1546326000000000, 1546412400000000, 1546326000000000])
+        cls._sample_data.append([1546300800000000, 1546387200000000, 1546300800000000])
 
         # _sample_data[6]: fraction is 1.0
-        cls._sample_data.append([1546326000000000, 1546412400000000, 1546412400000000])
+        cls._sample_data.append([1546300800000000, 1546387200000000, 1546387200000000])
 
         import os
         os.environ['TZ'] = "MST"

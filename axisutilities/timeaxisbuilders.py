@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import os
+import time
 from abc import ABCMeta, ABC, abstractmethod
 from calendar import monthrange
 from datetime import datetime, date, timedelta
@@ -18,27 +21,48 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
 
     **Note:** Don't forget to call `.build()` at the end to get the actual `Axis` object.
     """
+
     @staticmethod
-    def datetime_to_timestamp(data_ticks: (datetime, date, str, Iterable), **kwrargs) -> np.ndarray:
-        if isinstance(data_ticks, date):
-            return np.asarray(
-                [datetime.strptime(data_ticks.strftime("%c"), "%c").timestamp() * SECONDS_TO_MICROSECONDS_FACTOR],
-                dtype="int64"
+    def datetime_to_utc_timestamp(t: datetime) -> int:
+        """
+        Converts a datetime object to microseconds past January 1st, 1970. If the datetime object has time zone
+        info, the time is adjusted to be UTC. However, if there are no time zone info available, it is assumed that
+        the input is already in UTC.
+        :param t: Must be a datetime object
+        :return: Microseconds past January 1st, 1970.
+        """
+        if isinstance(t, datetime):
+            base = datetime(1970, 1, 1, 0, 0, 0, 0, t.tzinfo)
+            unadjusted = (t - base) // timedelta(seconds=1)
+            adjustment = 0 if t.tzinfo is None else t.utcoffset().total_seconds()
+            return int((unadjusted - adjustment) * SECONDS_TO_MICROSECONDS_FACTOR)
+        else:
+            raise TypeError("input must be of type datetime.")
+
+    @staticmethod
+    def date_to_utc_timestamp(t: date) -> int:
+        if isinstance(t, date):
+            return TimeAxisBuilder.to_utc_timestamp(
+                datetime.fromisoformat(t.isoformat())
             )
-        elif isinstance(data_ticks, datetime):
-            return np.asarray(
-                [data_ticks.timestamp() * SECONDS_TO_MICROSECONDS_FACTOR],
-                dtype="int64"
-            )
+        else:
+            raise TypeError("input must be of type date.")
+
+    @staticmethod
+    def to_utc_timestamp(data_ticks: (datetime, date, str, Iterable), **kwrargs) -> (np.number, np.ndarray):
+        if isinstance(data_ticks, datetime):
+            return np.int64(TimeAxisBuilder.datetime_to_utc_timestamp(data_ticks))
+        elif isinstance(data_ticks, date):
+            return np.int64(TimeAxisBuilder.date_to_utc_timestamp(data_ticks))
         elif isinstance(data_ticks, str):
             raise NotImplemented("")
         elif isinstance(data_ticks, Iterable):
             return np.asarray(
                 list(
-                    map(lambda e: TimeAxisBuilder.datetime_to_timestamp(e), data_ticks)
+                    map(lambda e: TimeAxisBuilder.to_utc_timestamp(e), data_ticks)
                 ),
                 dtype="int64"
-            ).flatten().reshape((1, -1))
+            ).reshape((1, -1))
         else:
             raise TypeError("data_ticks must be either a single value of type date or datetime, "
                             "or and iterable where all of its elements are of type date or datetime.")
@@ -94,19 +118,19 @@ class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
     def build(self) -> Axis:
         if self.prebuild_check():
             if (self._start_date is not None) and (self._end_date is not None):
-                start = int(TimeAxisBuilder.datetime_to_timestamp(self._start_date))
+                start = int(TimeAxisBuilder.to_utc_timestamp(self._start_date))
                 dt = self.get_dt()
-                end = int(TimeAxisBuilder.datetime_to_timestamp(self._end_date))
+                end = int(TimeAxisBuilder.to_utc_timestamp(self._end_date))
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
             if (self._start_date is not None) and (self._n_interval is not None):
-                start = int(TimeAxisBuilder.datetime_to_timestamp(self._start_date))
+                start = int(TimeAxisBuilder.to_utc_timestamp(self._start_date))
                 dt = self.get_dt()
                 end = start + self._n_interval * dt
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
             if (self._end_date is not None) and (self._n_interval is not None):
-                end = int(TimeAxisBuilder.datetime_to_timestamp(self._end_date))
+                end = int(TimeAxisBuilder.to_utc_timestamp(self._end_date))
                 dt = self.get_dt()
                 start = end - self._n_interval * dt
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
@@ -242,7 +266,7 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
         self.set_boundary_type(boundary_type)
 
     def set_data_ticks(self, data_ticks: Iterable) -> TimeAxisBuilderFromDataTicks:
-        self._data_ticks = TimeAxisBuilder.datetime_to_timestamp(data_ticks)
+        self._data_ticks = TimeAxisBuilder.to_utc_timestamp(data_ticks)
         return self
 
     def set_boundary_type(self, boundary_type) -> TimeAxisBuilderFromDataTicks:
@@ -347,7 +371,7 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
 
     def set_start_date(self, start_date: date) -> RollingWindowTimeAxisBuilder:
         if isinstance(start_date, date):
-            self._start = TimeAxisBuilder.datetime_to_timestamp(start_date)
+            self._start = TimeAxisBuilder.to_utc_timestamp(start_date)
         elif (start_date is None):
             self._start = None
         else:
@@ -357,7 +381,7 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
 
     def set_end_date(self, end_date: date) -> RollingWindowTimeAxisBuilder:
         if isinstance(end_date, date):
-            self._end = TimeAxisBuilder.datetime_to_timestamp(end_date)
+            self._end = TimeAxisBuilder.to_utc_timestamp(end_date)
         elif (end_date is None):
             self._end = None
         else:
@@ -500,27 +524,15 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
 
     def build(self) -> Axis:
         if self.prebuild_check():
-            n_month_in_first_year = 12 - self._start.month + 1
-            n_month_in_last_year = self._end.month
-            n_years_in_between = self._end.year - self._start.year - 1
+            start = self._start.year * 12 + (self._start.month - 1)
+            end = self._end.year * 12 + (self._end.month - 1) + 1
 
-            n_months = n_month_in_first_year + n_years_in_between * 12 + n_month_in_last_year
-
-            year_list = np.concatenate((
-                np.ones(n_month_in_first_year, dtype="int") * self._start.year,
-                np.repeat(np.arange(n_years_in_between, dtype="int") + self._start.year + 1, 12),
-                np.ones(n_month_in_last_year, dtype="int") * self._end.year
-            ))
-            month_list = (np.arange(n_months, dtype="int") + (self._start.month - 1)) % 12 + 1
-            for y, m in zip(year_list, month_list):
-                print(TimeAxisBuilder.datetime_to_timestamp(date(y, m, 1)))
-
-            lower_bound = TimeAxisBuilder.datetime_to_timestamp(
-                [date(y, m, 1) for y, m in zip(year_list, month_list)]
+            lower_bound = TimeAxisBuilder.to_utc_timestamp(
+                [date(v // 12, (v % 12) + 1, 1) for v in range(start, end)]
             ).reshape((-1, ))
-            upper_bound = TimeAxisBuilder.datetime_to_timestamp(
-                [date(y, m, monthrange(y, m)[1]) for y, m in zip(year_list, month_list)]
-            ).reshape((-1, ))
+            upper_bound = TimeAxisBuilder.to_utc_timestamp(
+                [date(v // 12, (v % 12) + 1, 1) for v in range(start + 1, end + 1)]
+            ).reshape((-1,))
 
             data_ticks = 0.5 * (lower_bound + upper_bound)
 

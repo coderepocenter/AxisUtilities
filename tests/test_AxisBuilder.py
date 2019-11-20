@@ -4,6 +4,7 @@ from unittest import TestCase
 from axisutilities import FixedIntervalAxisBuilder, IntervalBaseAxisBuilder
 from axisutilities.axisbuilder import RollingWindowAxisBuilder
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
+from axisutilities.timeaxisbuilders import TimeAxisBuilder
 
 
 class TestIntervalBaseAxisBuilder(TestCase):
@@ -116,8 +117,8 @@ class TestFixedIntervalAxisBuilder(TestCase):
         os.environ['TZ'] = 'MST'
 
     def test_build_00(self):
-        start = int(datetime.strptime(date(2019, 1, 1).strftime("%c"), "%c").timestamp() * SECONDS_TO_MICROSECONDS_FACTOR)
-        end = int(datetime.strptime(date(2019, 1, 8).strftime("%c"), "%c").timestamp() * SECONDS_TO_MICROSECONDS_FACTOR)
+        start = TimeAxisBuilder.date_to_utc_timestamp(date(2019, 1, 1))
+        end = TimeAxisBuilder.date_to_utc_timestamp(date(2019, 1, 8))
         interval = int(timedelta(days=1).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
         ta = FixedIntervalAxisBuilder()\
             .set_start(start)\
@@ -127,10 +128,9 @@ class TestFixedIntervalAxisBuilder(TestCase):
 
         print("Sample TimeAxis built by FixedIntervalTimeAxisBuilder: ", ta.asJson())
         self.assertEqual(
-            '{"nelem": 7, '
-            '"lower_bound": [1546326000000000, 1546412400000000, 1546498800000000, 1546585200000000, 1546671600000000, 1546758000000000, 1546844400000000], '
-             '"upper_bound": [1546412400000000, 1546498800000000, 1546585200000000, 1546671600000000, 1546758000000000, 1546844400000000, 1546930800000000], '
-             '"data_ticks": [1546369200000000, 1546455600000000, 1546542000000000, 1546628400000000, 1546714800000000, 1546801200000000, 1546887600000000], '
+            '{"nelem": 7, "lower_bound": [1546300800000000, 1546387200000000, 1546473600000000, 1546560000000000, 1546646400000000, 1546732800000000, 1546819200000000], '
+             '"upper_bound": [1546387200000000, 1546473600000000, 1546560000000000, 1546646400000000, 1546732800000000, 1546819200000000, 1546905600000000], '
+             '"data_ticks": [1546344000000000, 1546430400000000, 1546516800000000, 1546603200000000, 1546689600000000, 1546776000000000, 1546862400000000], '
              '"fraction": [0.5], '
              '"binding": "middle"}',
             ta.asJson()
