@@ -205,6 +205,10 @@ class DailyTimeAxisBuilder(BaseCommonKnownIntervals):
         return int(timedelta(days=1).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
 
 
+def DailyTimeAxis(**kwargs):
+    return DailyTimeAxisBuilder(**kwargs).build()
+
+
 class WeeklyTimeAxisBuilder(BaseCommonKnownIntervals):
     """
         As the name suggests, `WeeklyTimeAxisBuilder` creates a Weekly time axis, i.e. each element of the axis, covers
@@ -245,6 +249,10 @@ class WeeklyTimeAxisBuilder(BaseCommonKnownIntervals):
     @staticmethod
     def get_dt() -> int:
         return int(timedelta(days=7).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
+
+
+def WeeklyTimeAxis(**kwargs):
+    return WeeklyTimeAxisBuilder(**kwargs).build()
 
 
 class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
@@ -350,6 +358,10 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
         pass
 
 
+def TimeAxisFromDataTicks(**kwargs):
+    return TimeAxisBuilderFromDataTicks(**kwargs).build()
+
+
 class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
     """
     Creates a Rolling Window Time Axis. This is similar to `RollingWindowAxisBuilder` except that you
@@ -443,6 +455,10 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
     #             upper_bound=upper_bound,
     #             data_ticks=data_tick
     #         )
+
+
+def RollingWindowTimeAxis(**kwargs):
+    return RollingWindowTimeAxisBuilder(**kwargs).build()
 
 
 class MonthlyTimeAxisBuilder(TimeAxisBuilder):
@@ -542,3 +558,6 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
                 data_ticks=data_ticks
             )
 
+
+def MonthlyTimeAxis(**kwargs):
+    return MonthlyTimeAxisBuilder(kwargs).build()
