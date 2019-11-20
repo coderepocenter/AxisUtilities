@@ -2,4 +2,4 @@ numpy
 cftime
 scipy
 numba
-dask
+dask[complete]
