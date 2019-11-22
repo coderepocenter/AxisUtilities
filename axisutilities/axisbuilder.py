@@ -207,7 +207,7 @@ class IntervalBaseAxisBuilder(AxisBuilder):
             return Axis(lower_bound, upper_bound, data_ticks=data_ticks)
 
 
-def IntervalBaseAxis(**kwargs):
+def IntervalBaseAxis(**kwargs) -> Axis:
     return IntervalBaseAxisBuilder(**kwargs).build()
 
 
@@ -351,7 +351,7 @@ class FixedIntervalAxisBuilder(IntervalBaseAxisBuilder):
             return Axis(lower_bound, upper_bound, data_ticks=data_ticks)
 
 
-def FixedIntervalAxis(**kwargs):
+def FixedIntervalAxis(**kwargs) -> Axis:
     return FixedIntervalAxisBuilder(**kwargs).build()
 
 
@@ -527,6 +527,6 @@ class RollingWindowAxisBuilder(AxisBuilder):
             )
 
 
-def RollingWindowAxis(**kwargs):
+def RollingWindowAxis(**kwargs) -> Axis:
     return RollingWindowAxisBuilder(**kwargs).build()
 

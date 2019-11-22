@@ -205,7 +205,7 @@ class DailyTimeAxisBuilder(BaseCommonKnownIntervals):
         return int(timedelta(days=1).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
 
 
-def DailyTimeAxis(**kwargs):
+def DailyTimeAxis(**kwargs) -> Axis:
     return DailyTimeAxisBuilder(**kwargs).build()
 
 
@@ -251,7 +251,7 @@ class WeeklyTimeAxisBuilder(BaseCommonKnownIntervals):
         return int(timedelta(days=7).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
 
 
-def WeeklyTimeAxis(**kwargs):
+def WeeklyTimeAxis(**kwargs) -> Axis:
     return WeeklyTimeAxisBuilder(**kwargs).build()
 
 
@@ -358,7 +358,7 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
         pass
 
 
-def TimeAxisFromDataTicks(**kwargs):
+def TimeAxisFromDataTicks(**kwargs) -> Axis:
     return TimeAxisBuilderFromDataTicks(**kwargs).build()
 
 
@@ -457,7 +457,7 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
     #         )
 
 
-def RollingWindowTimeAxis(**kwargs):
+def RollingWindowTimeAxis(**kwargs) -> Axis:
     return RollingWindowTimeAxisBuilder(**kwargs).build()
 
 
@@ -559,5 +559,5 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
             )
 
 
-def MonthlyTimeAxis(**kwargs):
+def MonthlyTimeAxis(**kwargs) -> Axis:
     return MonthlyTimeAxisBuilder(kwargs).build()

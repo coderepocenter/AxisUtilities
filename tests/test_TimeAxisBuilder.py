@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 import numpy as np
 
 from axisutilities import Axis, WeeklyTimeAxisBuilder, RollingWindowTimeAxisBuilder, MonthlyTimeAxisBuilder, \
-    TimeAxisBuilderFromDataTicks, DailyTimeAxisBuilder, FixedIntervalAxisBuilder
+    TimeAxisBuilderFromDataTicks, DailyTimeAxisBuilder, FixedIntervalAxisBuilder, DailyTimeAxis
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
@@ -120,6 +120,46 @@ class TestDailyTimeAxisBuilder(TestCase):
         self.assertListEqual(
             axis.lower_bound.flatten().tolist()[1:],
             axis.upper_bound.flatten().tolist()[:-1]
+        )
+
+
+class TestDailyTimeAxis(TestCase):
+    def test_01(self):
+        start_date = date(2019, 1, 1)
+        end_date = date(2019, 1, 8)
+
+        expected_axis = DailyTimeAxisBuilder()\
+            .set_start_date(start_date)\
+            .set_end_date(end_date)\
+            .build()
+
+        axis = DailyTimeAxis(
+            start_date=start_date,
+            end_date=end_date
+        )
+
+        np.testing.assert_almost_equal(
+            axis._bounds,
+            expected_axis._bounds
+        )
+
+    def test_02(self):
+        start_date = date(2019, 1, 1)
+        end_date = date(2019, 1, 8)
+
+        expected_axis = DailyTimeAxisBuilder(
+            start_date=start_date,
+            end_date=end_date
+        ).build()
+
+        axis = DailyTimeAxis(
+            start_date=start_date,
+            end_date=end_date
+        )
+
+        np.testing.assert_almost_equal(
+            axis._bounds,
+            expected_axis._bounds
         )
 
 
