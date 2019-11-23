@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-import time
 from abc import ABCMeta, ABC, abstractmethod
 from calendar import monthrange
 from datetime import datetime, date, timedelta
@@ -560,4 +558,4 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
 
 
 def MonthlyTimeAxis(**kwargs) -> Axis:
-    return MonthlyTimeAxisBuilder(kwargs).build()
+    return MonthlyTimeAxisBuilder(**kwargs).build()
