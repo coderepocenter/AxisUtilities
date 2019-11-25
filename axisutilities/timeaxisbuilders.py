@@ -43,17 +43,21 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
             return TimeAxisBuilder.to_utc_timestamp(
                 datetime.fromisoformat(t.isoformat())
             )
+        elif t is None:
+            return None
         else:
             raise TypeError("input must be of type date.")
 
     @staticmethod
-    def to_utc_timestamp(data_ticks: (datetime, date, str, Iterable), **kwrargs) -> (np.number, np.ndarray):
+    def to_utc_timestamp(data_ticks: (datetime, date, str, Iterable), **kwrargs) -> (np.number, np.ndarray, None):
         if isinstance(data_ticks, datetime):
             return np.int64(TimeAxisBuilder.datetime_to_utc_timestamp(data_ticks))
         elif isinstance(data_ticks, date):
             return np.int64(TimeAxisBuilder.date_to_utc_timestamp(data_ticks))
         elif isinstance(data_ticks, str):
             raise NotImplemented("")
+        elif data_ticks is None:
+            return None
         elif isinstance(data_ticks, Iterable):
             return np.asarray(
                 list(
@@ -65,6 +69,15 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
             raise TypeError("data_ticks must be either a single value of type date or datetime, "
                             "or and iterable where all of its elements are of type date or datetime.")
 
+    @staticmethod
+    def validate_date(input: date, name: str, none_is_ok: bool = True) -> (date, None):
+        if isinstance(input, date):
+            return input
+        elif none_is_ok and (input is None):
+            return None
+        else:
+            raise TypeError(f"{name} must be of type date")
+
 
 class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
     @staticmethod
@@ -73,24 +86,16 @@ class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
         pass
 
     def __init__(self, **kwargs):
-        self.set_start_date(kwargs.get("start_date", None))
-        self.set_end_date(kwargs.get("end_date", None))
+        self._start_date = TimeAxisBuilder.validate_date(kwargs.get("start_date", None), "start_date")
+        self._end_date = TimeAxisBuilder.validate_date(kwargs.get("end_date", None), "end_date")
         self.set_n_interval(kwargs.get("n_interval", None))
 
     def set_start_date(self, start_date: date) -> BaseCommonKnownIntervals:
-        if (start_date is None) or isinstance(start_date, date):
-            self._start_date = start_date
-        else:
-            raise TypeError("start_date must be of type date.")
-
+        self._start_date = TimeAxisBuilder.validate_date(start_date, "start_date")
         return self
 
     def set_end_date(self, end_date: date) -> BaseCommonKnownIntervals:
-        if (end_date is None) or isinstance(end_date, date):
-            self._end_date = end_date
-        else:
-            raise TypeError("end_date must be of type date.")
-
+        self._end_date = TimeAxisBuilder.validate_date(end_date, "end_date")
         return self
 
     def set_n_interval(self, n_interval: int) -> BaseCommonKnownIntervals:
@@ -353,7 +358,7 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
     @staticmethod
     def from_xarray():
         # TODO
-        pass
+        raise NotImplemented("")
 
 
 def TimeAxisFromDataTicks(**kwargs) -> Axis:
@@ -380,22 +385,11 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
         self.set_base(kwargs.get("base", int(timedelta(days=1).total_seconds()) * SECONDS_TO_MICROSECONDS_FACTOR))
 
     def set_start_date(self, start_date: date) -> RollingWindowTimeAxisBuilder:
-        if isinstance(start_date, date):
-            self._start = TimeAxisBuilder.to_utc_timestamp(start_date)
-        elif (start_date is None):
-            self._start = None
-        else:
-            raise TypeError("start_date must be of type date")
-
+        self._start = TimeAxisBuilder.to_utc_timestamp(start_date)
         return self
 
     def set_end_date(self, end_date: date) -> RollingWindowTimeAxisBuilder:
-        if isinstance(end_date, date):
-            self._end = TimeAxisBuilder.to_utc_timestamp(end_date)
-        elif (end_date is None):
-            self._end = None
-        else:
-            raise TypeError("end_date must be of type date")
+        self._end = TimeAxisBuilder.to_utc_timestamp(end_date)
         return self
 
     def set_base(self, base: (int, timedelta)):
@@ -409,50 +403,6 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
                                 "of an integral type that is positive.")
 
         return self
-
-    # def prebuild_check(self) -> (bool, Exception):
-    #     if self._start_date is None:
-    #         raise ValueError("start_date is not provided.")
-    #
-    #     if self._base_dt is None:
-    #         raise ValueError("Some how base_dt ended up to be None. It cannot be None")
-    #
-    #     if self._window_size is None:
-    #         raise ValueError("Window_size is not provided. window_size must a positive integer.")
-    #
-    #     if (self._n_window is not None) and (self._end_date is not None):
-    #         raise ValueError("You could provide either the end_date or the n_window; but not both.")
-    #
-    #     if (self._n_window is None) and (self._end_date is None):
-    #         raise ValueError("Neither end_date nor the n_window is provided. "
-    #                          "You must provide exactly one of them.")
-    #
-    #     if (self._start_date is not None) and (self._end_date is not None) and (self._start_date > self._end_date):
-    #         raise ValueError("start_date must be before end_date.")
-    #
-    #     return True
-    #
-    # def build(self) -> Axis:
-    #     if self.prebuild_check():
-    #         if self._end_date is not None:
-    #             self._n_window = np.ceil(
-    #                 (TimeAxisBuilder.datetime_to_timestamp(self._end_date) -
-    #                  TimeAxisBuilder.datetime_to_timestamp(self._start_date)) / self._base_dt
-    #             ) - (self._window_size - 1)
-    #             if self._n_window < 1:
-    #                 raise ValueError("the provided end_date and start_date resulted in 0 n_window.")
-    #
-    #         lower_bound = TimeAxisBuilder.datetime_to_timestamp(self._start_date) + \
-    #                       np.arange(self._n_window, dtype="int64") * self._base_dt
-    #
-    #         window_length = self._window_size * self._base_dt
-    #         upper_bound = lower_bound + window_length
-    #         data_tick = 0.5 * (lower_bound + upper_bound)
-    #         return Axis(
-    #             lower_bound=lower_bound,
-    #             upper_bound=upper_bound,
-    #             data_ticks=data_tick
-    #         )
 
 
 def RollingWindowTimeAxis(**kwargs) -> Axis:
@@ -504,27 +454,11 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
             self._end = None
 
     def set_start_year_month(self, start_year: int, start_month: int = 1) -> MonthlyTimeAxisBuilder:
-        tmp_start_year = int(start_year)
-        tmp_start_month = int(start_month)
-
-        if 1<= start_month <= 12:
-            self._start = date(tmp_start_year, tmp_start_month, 1)
-        else:
-            raise ValueError("start_year/month must be convertible to an integer value and "
-                             "start_month must be a number between 1 and 12")
-
+        self._start = date(start_year, start_month, 1)
         return self
 
     def set_end_year_month(self, end_year: int, end_month: int = 12) -> MonthlyTimeAxisBuilder:
-        tmp_end_year = int(end_year)
-        tmp_end_month = int(end_month)
-
-        if 1 <= end_month <= 12:
-            self._end = date(tmp_end_year, tmp_end_month, monthrange(tmp_end_year, tmp_end_month)[1])
-        else:
-            raise ValueError("end_year/month must be convertible to an integer value and "
-                             "end_month must be a number between 1 and 12")
-
+        self._end = date(end_year, end_month, monthrange(end_year, end_month)[1])
         return self
 
     def prebuild_check(self) -> (bool, Exception):
