@@ -9,7 +9,6 @@ import numpy as np
 
 from axisutilities import Axis
 from axisutilities.axisbuilder import AxisBuilder, FixedIntervalAxisBuilder, RollingWindowAxisBuilder
-from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
 class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
@@ -19,6 +18,22 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
 
     **Note:** Don't forget to call `.build()` at the end to get the actual `Axis` object.
     """
+
+    def __init__(self, **kwargs):
+        from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
+        self.second_conversion_factor = kwargs.get("second_conversion_factor", SECONDS_TO_MICROSECONDS_FACTOR)
+
+    @property
+    def second_conversion_factor(self) -> int:
+        return self._second_conversion_factor
+
+    @second_conversion_factor.setter
+    def second_conversion_factor(self, value: int):
+        int_value = int(value)
+        if int_value > 0:
+            self._second_conversion_factor = int_value
+        else:
+            raise ValueError('a positive value convertible to an int must be provided.')
 
     @staticmethod
     def datetime_to_utc_timestamp(t: datetime) -> int:
@@ -33,6 +48,7 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
             base = datetime(1970, 1, 1, 0, 0, 0, 0, t.tzinfo)
             unadjusted = (t - base) // timedelta(seconds=1)
             adjustment = 0 if t.tzinfo is None else t.utcoffset().total_seconds()
+            from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
             return int((unadjusted - adjustment) * SECONDS_TO_MICROSECONDS_FACTOR)
         else:
             raise TypeError("input must be of type datetime.")
@@ -80,12 +96,12 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
 
 
 class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
-    @staticmethod
     @abstractmethod
-    def get_dt() -> int:
+    def get_dt(self) -> int:
         pass
 
     def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._start_date = TimeAxisBuilder.validate_date(kwargs.get("start_date", None), "start_date")
         self._end_date = TimeAxisBuilder.validate_date(kwargs.get("end_date", None), "end_date")
         self.set_n_interval(kwargs.get("n_interval", None))
@@ -203,9 +219,8 @@ class DailyTimeAxisBuilder(BaseCommonKnownIntervals):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @staticmethod
-    def get_dt() -> int:
-        return int(timedelta(days=1).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
+    def get_dt(self) -> int:
+        return int(timedelta(days=1).total_seconds() * self.second_conversion_factor)
 
 
 def DailyTimeAxis(**kwargs) -> Axis:
@@ -249,9 +264,8 @@ class WeeklyTimeAxisBuilder(BaseCommonKnownIntervals):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @staticmethod
-    def get_dt() -> int:
-        return int(timedelta(days=7).total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR)
+    def get_dt(self) -> int:
+        return int(timedelta(days=7).total_seconds() * self.second_conversion_factor)
 
 
 def WeeklyTimeAxis(**kwargs) -> Axis:
@@ -268,6 +282,7 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
     }
 
     def __init__(self, data_ticks=None, boundary_type="centered", **kwargs):
+        super().__init__(**kwargs)
         if data_ticks is None:
             self._data_ticks = None
         else:
@@ -379,10 +394,11 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
     but then providing the `base` manually as an integer number, make sure that the `base` is in microsecond.
     """
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        TimeAxisBuilder.__init__(self, **kwargs)
+        RollingWindowAxisBuilder.__init__(self, **kwargs)
         self.set_start_date(kwargs.get("start_date", None))
         self.set_end_date(kwargs.get("end_date", None))
-        self.set_base(kwargs.get("base", int(timedelta(days=1).total_seconds()) * SECONDS_TO_MICROSECONDS_FACTOR))
+        self.set_base(kwargs.get("base", int(timedelta(days=1).total_seconds()) * self.second_conversion_factor))
 
     def set_start_date(self, start_date: date) -> RollingWindowTimeAxisBuilder:
         self._start = TimeAxisBuilder.to_utc_timestamp(start_date)
@@ -394,7 +410,7 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
 
     def set_base(self, base: (int, timedelta)):
         if isinstance(base, timedelta):
-            self._base = timedelta.total_seconds() * SECONDS_TO_MICROSECONDS_FACTOR
+            self._base = timedelta.total_seconds() * self.second_conversion_factor
         else:
             try:
                 super().set_base(base)
@@ -442,7 +458,8 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
         ...         ).build()
 
     """
-    def __init__(self, start_year: int, end_year: int, start_month: int = 1, end_month: int = 12):
+    def __init__(self, start_year: int, end_year: int, start_month: int = 1, end_month: int = 12, **kwargs):
+        super().__init__(**kwargs)
         if (start_year is not None) and (start_month is not None):
             self.set_start_year_month(start_year, start_month)
         else:
@@ -493,3 +510,6 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
 
 def MonthlyTimeAxis(**kwargs) -> Axis:
     return MonthlyTimeAxisBuilder(**kwargs).build()
+
+
+
