@@ -28,12 +28,11 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
         return self._second_conversion_factor
 
     @second_conversion_factor.setter
-    def second_conversion_factor(self, value: int):
-        int_value = int(value)
-        if int_value > 0:
-            self._second_conversion_factor = int_value
+    def second_conversion_factor(self, value):
+        if value > 0:
+            self._second_conversion_factor = value
         else:
-            raise ValueError('a positive value convertible to an int must be provided.')
+            raise ValueError('a positive value must be provided.')
 
     @staticmethod
     def datetime_to_utc_timestamp(t: datetime) -> int:
@@ -136,20 +135,38 @@ class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
 
     def build(self) -> Axis:
         if self.prebuild_check():
+            from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
             if (self._start_date is not None) and (self._end_date is not None):
-                start = int(TimeAxisBuilder.to_utc_timestamp(self._start_date))
+                start = int(round(
+                    TimeAxisBuilder.to_utc_timestamp(self._start_date)
+                    / SECONDS_TO_MICROSECONDS_FACTOR
+                    * self.second_conversion_factor
+                ))
                 dt = self.get_dt()
-                end = int(TimeAxisBuilder.to_utc_timestamp(self._end_date))
+                end = int(round(
+                    TimeAxisBuilder.to_utc_timestamp(self._end_date)
+                    / SECONDS_TO_MICROSECONDS_FACTOR
+                    * self.second_conversion_factor
+                ))
+
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
             if (self._start_date is not None) and (self._n_interval is not None):
-                start = int(TimeAxisBuilder.to_utc_timestamp(self._start_date))
+                start = int(round(
+                    TimeAxisBuilder.to_utc_timestamp(self._start_date)
+                    / SECONDS_TO_MICROSECONDS_FACTOR
+                    * self.second_conversion_factor
+                ))
                 dt = self.get_dt()
                 end = start + self._n_interval * dt
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
             if (self._end_date is not None) and (self._n_interval is not None):
-                end = int(TimeAxisBuilder.to_utc_timestamp(self._end_date))
+                end = int(round(
+                    TimeAxisBuilder.to_utc_timestamp(self._end_date)
+                    / SECONDS_TO_MICROSECONDS_FACTOR
+                    * self.second_conversion_factor
+                ))
                 dt = self.get_dt()
                 start = end - self._n_interval * dt
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
@@ -220,7 +237,9 @@ class DailyTimeAxisBuilder(BaseCommonKnownIntervals):
         super().__init__(**kwargs)
 
     def get_dt(self) -> int:
-        return int(timedelta(days=1).total_seconds() * self.second_conversion_factor)
+        return int(round(
+            timedelta(days=1).total_seconds() * self.second_conversion_factor
+        ))
 
 
 def DailyTimeAxis(**kwargs) -> Axis:

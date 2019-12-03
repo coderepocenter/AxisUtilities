@@ -6,6 +6,31 @@ import numpy as np
 from axisutilities import Axis, WeeklyTimeAxisBuilder, RollingWindowTimeAxisBuilder, MonthlyTimeAxisBuilder, \
     TimeAxisBuilderFromDataTicks, DailyTimeAxisBuilder, FixedIntervalAxisBuilder, DailyTimeAxis
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
+from axisutilities.timeaxisbuilders import TimeAxisBuilder
+
+
+class TestTimeAxisBuilder(TestCase):
+    def test_to_utc_timestamp_01(self):
+        ts = TimeAxisBuilder.to_utc_timestamp(date(2019, 1, 1))
+        self.assertEqual(
+            1546300800*1000000,
+            ts
+        )
+
+    def test_to_utc_timestamp_02(self):
+        ts = TimeAxisBuilder.to_utc_timestamp(None)
+        self.assertEqual(
+            None,
+            ts
+        )
+
+    def test_to_utc_timestamp_01(self):
+        ts = TimeAxisBuilder.to_utc_timestamp(date(1970, 1, 1))
+        self.assertEqual(
+            0,
+            ts
+        )
+
 
 
 class TestDailyTimeAxisBuilder(TestCase):
@@ -122,6 +147,29 @@ class TestDailyTimeAxisBuilder(TestCase):
             axis.upper_bound.flatten().tolist()[:-1]
         )
 
+    def test_auxilary_builder_method(self):
+        axis = DailyTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 8)
+        )
+
+        self.assertListEqual(
+            [1546300800000000, 1546387200000000, 1546473600000000, 1546560000000000, 1546646400000000, 1546732800000000,
+             1546819200000000],
+            axis.lower_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            [1546387200000000, 1546473600000000, 1546560000000000, 1546646400000000, 1546732800000000, 1546819200000000,
+             1546905600000000],
+            axis.upper_bound.flatten().tolist()
+        )
+
+        self.assertListEqual(
+            axis.lower_bound.flatten().tolist()[1:],
+            axis.upper_bound.flatten().tolist()[:-1]
+        )
+
 
 class TestDailyTimeAxis(TestCase):
     def test_01(self):
@@ -161,6 +209,67 @@ class TestDailyTimeAxis(TestCase):
             axis._bounds,
             expected_axis._bounds
         )
+
+    def test_different_unit_01(self):
+        axis_ms = DailyTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 8)
+        )
+
+        axis_s = DailyTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 8),
+            second_conversion_factor=1
+        )
+
+        for e in zip(axis_ms.lower_bound.flatten().tolist(), axis_s.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * SECONDS_TO_MICROSECONDS_FACTOR)
+
+        for e in zip(axis_ms.upper_bound.flatten().tolist(), axis_s.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * SECONDS_TO_MICROSECONDS_FACTOR)
+
+        for e in zip(axis_ms.data_ticks.flatten().tolist(), axis_s.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * SECONDS_TO_MICROSECONDS_FACTOR)
+
+    def test_different_unit_02(self):
+        axis_ms = DailyTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 8)
+        )
+
+        second_to_day = 1 / 24 / 60 / 60
+
+        axis_d = DailyTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 8),
+            second_conversion_factor=second_to_day
+        )
+
+        for e in zip(axis_ms.lower_bound.flatten().tolist(), axis_d.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], int(e[1] / second_to_day * SECONDS_TO_MICROSECONDS_FACTOR))
+
+        for e in zip(axis_ms.upper_bound.flatten().tolist(), axis_d.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], int(e[1] / second_to_day * SECONDS_TO_MICROSECONDS_FACTOR))
+
+    def test_different_unit_03(self):
+        axis_ms = DailyTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 8)
+        )
+
+        second_to_hour = 1 / 24 / 60
+
+        axis_h = DailyTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 8),
+            second_conversion_factor=second_to_hour
+        )
+
+        for e in zip(axis_ms.lower_bound.flatten().tolist(), axis_h.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], int(e[1] / second_to_hour * SECONDS_TO_MICROSECONDS_FACTOR))
+
+        for e in zip(axis_ms.upper_bound.flatten().tolist(), axis_h.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], int(e[1] / second_to_hour * SECONDS_TO_MICROSECONDS_FACTOR))
 
 
 class TestWeeklyTimeAxisBuilder(TestCase):
@@ -238,7 +347,6 @@ class TestRollingWindowTimeAxisBuilder(TestCase):
         os.environ['TZ'] = 'MST'
 
     def test_build_01(self):
-        a = 1
         ta = RollingWindowTimeAxisBuilder()\
                 .set_start_date(date(2019, 1, 1))\
                 .set_end_date(date(2019, 1, 15))\
@@ -259,7 +367,6 @@ class TestRollingWindowTimeAxisBuilder(TestCase):
         self.assertTrue(np.all((upper_bound - data_ticks) == 3.5 * 24 * 3600 * 1e6))
 
     def test_build_02(self):
-        a = 1
         ta = RollingWindowTimeAxisBuilder(
             start_date=date(2019, 1, 1),
             end_date=date(2019, 1, 15),
