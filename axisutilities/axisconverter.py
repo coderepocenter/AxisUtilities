@@ -126,7 +126,34 @@ class AxisConverter:
         >>>
         >>> weekly_user_defined = ac.apply_function(daily_data, user_defined_function, dimension=3)
 
+        * Creating Axis-Converter covering different periods: Although from- and to-axis could have different
+          granularity, eg. one could be daily, another weekly; however, they both must cover the same period in total.
+          For example, they both must start at January 1st, and end on May 6th. If you want to turn this check off,
+          pass an extra arguments, called `assure_no_bound_mismatch` and set it to false.
+
+        >>> from_axis = DailyTimeAxisBuilder(
+        ...     start_date=date(2019, 1, 1),
+        ...     n_interval=14
+        ... ).build()
+        >>> to_axis = WeeklyTimeAxisBuilder(
+        ...     start_date=date(2019, 1, 1),
+        ...     n_interval=3
+        ... ).build()
+        >>> # This will generate exception and it would fail:
+        ... # tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        ... # instead use the following:
+        ... tc = AxisConverter(
+        ...     from_axis=from_axis,
+        ...     to_axis=to_axis,
+        ...     assure_no_bound_mismatch=False
+        ... )
+
     """
+    @staticmethod
+    def _assure_no_bound_missmatch(fromAxis: Axis, toAxis: Axis) -> bool:
+        return  (fromAxis.lower_bound[0, 0] == toAxis.lower_bound[0, 0]) and \
+                (fromAxis.upper_bound[0, -1] == toAxis.upper_bound[0, -1])
+
     def __init__(self, **kwargs) -> None:
         if ("from_axis" in kwargs) and ("to_axis" in kwargs):
             from_ta = kwargs["from_axis"]
@@ -141,6 +168,14 @@ class AxisConverter:
             self._to_ta = to_ta
         else:
             raise ValueError("Not enough information is provided to construct the TimeAxisConverter.")
+
+        if bool(kwargs.get("assure_no_bound_mismatch", True)) and \
+                (not AxisConverter._assure_no_bound_missmatch(self._from_ta, self._to_ta)):
+            raise ValueError("from- and to-axis cover a different period. Although from- and to-axis could have different "
+                             "granularity, eg. one could be daily, another weekly; however, they both must cover the same"
+                             "period in total. For example, they both must start at January 1st, and end on May 6th. "
+                             "If you want to turn this check off, pass an extra arguments, called "
+                             "`assure_no_bound_mismatch` and set it to false")
 
     @property
     def from_nelem(self):

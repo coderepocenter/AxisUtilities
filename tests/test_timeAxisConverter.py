@@ -317,7 +317,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
 
         from_data = list(range(1, 15))
 
@@ -482,7 +482,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
 
         from_data = list(range(1, 15))
 
@@ -604,7 +604,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
 
         from_data = list(range(1, 15))
 
@@ -805,7 +805,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
         from_data = da.arange(14, dtype='float64') 
         to_data = tc.min(from_data).compute()
         np.testing.assert_almost_equal(to_data, np.array([0.0, 7.0, np.nan]).reshape(3, 1))
@@ -821,7 +821,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
         from_data = da.arange(14, dtype='float64') 
         to_data = tc.max(from_data).compute()
         np.testing.assert_almost_equal(to_data, np.array([6.0, 13.0, np.nan]).reshape(3, 1))
