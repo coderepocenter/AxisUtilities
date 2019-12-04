@@ -6,7 +6,8 @@ import numpy as np
 from axisutilities import Axis, WeeklyTimeAxisBuilder, RollingWindowTimeAxisBuilder, MonthlyTimeAxisBuilder, \
     TimeAxisBuilderFromDataTicks, DailyTimeAxisBuilder, FixedIntervalAxisBuilder, DailyTimeAxis
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
-from axisutilities.timeaxisbuilders import TimeAxisBuilder
+from axisutilities.timeaxisbuilders import TimeAxisBuilder, WeeklyTimeAxis, RollingWindowTimeAxis, MonthlyTimeAxis, \
+    TimeAxisFromDataTicks
 
 
 class TestTimeAxisBuilder(TestCase):
@@ -30,7 +31,6 @@ class TestTimeAxisBuilder(TestCase):
             0,
             ts
         )
-
 
 
 class TestDailyTimeAxisBuilder(TestCase):
@@ -340,6 +340,68 @@ class TestWeeklyTimeAxisBuilder(TestCase):
         )
 
 
+class TestWeeklyTimeAxis(TestCase):
+    def test_01(self):
+        ta = WeeklyTimeAxis(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        )
+
+        self.assertEqual(2, ta.nelem)
+
+        self.assertEqual(
+            datetime(2019, 1, 8),
+            datetime.utcfromtimestamp(ta.upper_bound[0, 0] / SECONDS_TO_MICROSECONDS_FACTOR)
+        )
+
+        self.assertEqual(
+            datetime(2019, 1, 15),
+            datetime.utcfromtimestamp(ta.upper_bound[0, 1] / SECONDS_TO_MICROSECONDS_FACTOR)
+        )
+
+    def test_different_unit_01(self):
+        ta_ms = WeeklyTimeAxis(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        )
+
+        ta_s = WeeklyTimeAxis(
+            start_date=date(2019, 1, 1),
+            n_interval=2,
+            second_conversion_factor=1
+        )
+
+        for e in zip(ta_ms.lower_bound.flatten().tolist(), ta_s.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+        for e in zip(ta_ms.upper_bound.flatten().tolist(), ta_s.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+        for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_s.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+    def test_different_unit_02(self):
+        ta_ms = WeeklyTimeAxis(
+            start_date=date(2019, 1, 1),
+            n_interval=2
+        )
+
+        ta_h = WeeklyTimeAxis(
+            start_date=date(2019, 1, 1),
+            n_interval=2,
+            second_conversion_factor=1 / 3600
+        )
+
+        for e in zip(ta_ms.lower_bound.flatten().tolist(), ta_h.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 3600e6)
+
+        for e in zip(ta_ms.upper_bound.flatten().tolist(), ta_h.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 3600e6)
+
+        for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_h.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 3600e6)
+
+
 class TestRollingWindowTimeAxisBuilder(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -347,6 +409,9 @@ class TestRollingWindowTimeAxisBuilder(TestCase):
         os.environ['TZ'] = 'MST'
 
     def test_build_01(self):
+        tmp_ta = RollingWindowTimeAxisBuilder()
+        tmp_ta.set_start_date(date(2019, 1, 1))
+
         ta = RollingWindowTimeAxisBuilder()\
                 .set_start_date(date(2019, 1, 1))\
                 .set_end_date(date(2019, 1, 15))\
@@ -385,6 +450,77 @@ class TestRollingWindowTimeAxisBuilder(TestCase):
         self.assertTrue(np.all((upper_bound[0, 1:] - upper_bound[0, :-1]) == 24 * 3600 * 1e6))
         self.assertTrue(np.all((data_ticks - lower_bound) == 3.5 * 24 * 3600 * 1e6))
         self.assertTrue(np.all((upper_bound - data_ticks) == 3.5 * 24 * 3600 * 1e6))
+
+
+class TestRollingWindowTimeAxis(TestCase):
+    def test_01(self):
+        ta = RollingWindowTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 15),
+            window_size=7
+        )
+
+        self.assertEqual(8, ta.nelem)
+
+        lower_bound = ta.lower_bound
+        upper_bound = ta.upper_bound
+        data_ticks = ta.data_ticks
+
+        self.assertTrue(np.all(lower_bound < upper_bound))
+        self.assertTrue(np.all((upper_bound - lower_bound) == 7 * 24 * 3600 * 1e6))
+        self.assertTrue(np.all((lower_bound[0, 1:] - lower_bound[0, :-1]) == 24 * 3600 * 1e6))
+        self.assertTrue(np.all((upper_bound[0, 1:] - upper_bound[0, :-1]) == 24 * 3600 * 1e6))
+        self.assertTrue(np.all((data_ticks - lower_bound) == 3.5 * 24 * 3600 * 1e6))
+        self.assertTrue(np.all((upper_bound - data_ticks) == 3.5 * 24 * 3600 * 1e6))
+
+    def test_different_unit_01(self):
+        ta_ms = RollingWindowTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 15),
+            window_size=7
+        )
+
+        ta_s = RollingWindowTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 15),
+            window_size=7,
+            second_conversion_factor=1
+        )
+
+
+        for e in zip(ta_ms.lower_bound.flatten().tolist(), ta_s.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+        for e in zip(ta_ms.upper_bound.flatten().tolist(), ta_s.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+        for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_s.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+    def test_different_unit_02(self):
+        ta_ms = RollingWindowTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 15),
+            window_size=7
+        )
+
+        ta_h = RollingWindowTimeAxis(
+            start_date=date(2019, 1, 1),
+            end_date=date(2019, 1, 15),
+            window_size=7,
+            second_conversion_factor=(1 / 3600)
+        )
+
+        self.assertEqual(ta_ms.nelem, ta_h.nelem)
+
+        for e in zip(ta_ms.lower_bound.flatten().tolist(), ta_h.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
+
+        for e in zip(ta_ms.upper_bound.flatten().tolist(), ta_h.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
+
+        for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_h.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
 
 
 class TestMonthlyTimeAxisBuilder(TestCase):
@@ -460,13 +596,13 @@ class TestMonthlyTimeAxisBuilder(TestCase):
         ).build()
 
         self.assertEqual(8, ta.nelem)
-        print(ta.lower_bound[0, :].tolist())
+
         self.assertListEqual(
             [1569888000000000, 1572566400000000, 1575158400000000, 1577836800000000,
              1580515200000000, 1583020800000000, 1585699200000000, 1588291200000000],
             ta.lower_bound[0, :].tolist()
         )
-        print(ta.upper_bound[0, :].tolist())
+
         self.assertListEqual(
             [1572566400000000, 1575158400000000, 1577836800000000, 1580515200000000,
              1583020800000000, 1585699200000000, 1588291200000000, 1590969600000000],
@@ -477,6 +613,87 @@ class TestMonthlyTimeAxisBuilder(TestCase):
             ta.lower_bound[0, 1:].tolist(),
             ta.upper_bound[0, :-1].tolist()
         )
+
+
+class TestMonthlyTimeAxis(TestCase):
+    def test_build_03(self):
+        ta = MonthlyTimeAxis(
+            start_year=2019,
+            end_year=2020,
+            start_month=10,
+            end_month=5
+        )
+
+        self.assertEqual(8, ta.nelem)
+
+        self.assertListEqual(
+            [1569888000000000, 1572566400000000, 1575158400000000, 1577836800000000,
+             1580515200000000, 1583020800000000, 1585699200000000, 1588291200000000],
+            ta.lower_bound[0, :].tolist()
+        )
+
+        self.assertListEqual(
+            [1572566400000000, 1575158400000000, 1577836800000000, 1580515200000000,
+             1583020800000000, 1585699200000000, 1588291200000000, 1590969600000000],
+            ta.upper_bound[0, :].tolist()
+        )
+
+        self.assertListEqual(
+            ta.lower_bound[0, 1:].tolist(),
+            ta.upper_bound[0, :-1].tolist()
+        )
+
+    def test_different_unit_01(self):
+        ta_ms = MonthlyTimeAxis(
+            start_year=2019,
+            end_year=2020,
+            start_month=10,
+            end_month=5
+        )
+
+        ta_s = MonthlyTimeAxis(
+            start_year=2019,
+            end_year=2020,
+            start_month=10,
+            end_month=5,
+            second_conversion_factor=1
+        )
+
+        for e in zip(ta_ms.lower_bound.flatten().tolist(), ta_s.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+        for e in zip(ta_ms.upper_bound.flatten().tolist(), ta_s.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+        for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_s.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+    def test_different_unit_02(self):
+        ta_ms = MonthlyTimeAxis(
+            start_year=2019,
+            end_year=2020,
+            start_month=10,
+            end_month=5
+        )
+
+        ta_h = MonthlyTimeAxis(
+            start_year=2019,
+            end_year=2020,
+            start_month=10,
+            end_month=5,
+            second_conversion_factor=(1 / 3600)
+        )
+
+        self.assertEqual(ta_ms.nelem, ta_h.nelem)
+
+        for e in zip(ta_ms.lower_bound.flatten().tolist(), ta_h.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
+
+        for e in zip(ta_ms.upper_bound.flatten().tolist(), ta_h.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
+
+        for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_h.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
 
 
 class TestTimeAxisBuilderFromDataTicks(TestCase):
@@ -491,6 +708,70 @@ class TestTimeAxisBuilderFromDataTicks(TestCase):
             data_ticks=data_ticks
         ).build()
 
+        interval = ((ta.upper_bound - ta.lower_bound) / 1000000).flatten().tolist()
+        np.testing.assert_almost_equal(interval, 86400.0)
+
+        np.testing.assert_almost_equal(
+            (ta.upper_bound - ta.data_ticks).flatten(),
+            (ta.data_ticks - ta.lower_bound).flatten()
+        )
+
+class TestTimeAxisFromDataTicks(TestCase):
+    def test_01(self):
+        data_ticks = [datetime(2019, 1, i, 12, 0, 0) for i in range(1, 8)]
+        ta = TimeAxisFromDataTicks(
+            data_ticks=data_ticks
+        )
+
+        interval = ((ta.upper_bound - ta.lower_bound) / 1000000).flatten().tolist()
+        np.testing.assert_almost_equal(interval, 86400.0)
+
+        np.testing.assert_almost_equal(
+            (ta.upper_bound - ta.data_ticks).flatten(),
+            (ta.data_ticks - ta.lower_bound).flatten()
+        )
+
+    def test_different_unit_01(self):
+        data_ticks = [datetime(2019, 1, i, 12, 0, 0) for i in range(1, 8)]
+        ta_ms = TimeAxisFromDataTicks(
+            data_ticks=data_ticks
+        )
+
+        ta_s = TimeAxisFromDataTicks(
+            data_ticks=data_ticks,
+            second_conversion_factor=1
+        )
+
+        for e in zip(ta_ms.lower_bound.flatten().tolist(), ta_s.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+        for e in zip(ta_ms.upper_bound.flatten().tolist(), ta_s.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+        for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_s.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 1000000)
+
+    def test_different_unit_02(self):
+        data_ticks = [datetime(2019, 1, i, 12, 0, 0) for i in range(1, 8)]
+        ta_ms = TimeAxisFromDataTicks(
+            data_ticks=data_ticks
+        )
+
+        ta_h = TimeAxisFromDataTicks(
+            data_ticks=data_ticks,
+            second_conversion_factor=(1 / 3600)
+        )
+
+        self.assertEqual(ta_ms.nelem, ta_h.nelem)
+
+        for e in zip(ta_ms.lower_bound.flatten().tolist(), ta_h.lower_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
+
+        for e in zip(ta_ms.upper_bound.flatten().tolist(), ta_h.upper_bound.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
+
+        for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_h.data_ticks.flatten().tolist()):
+            self.assertEqual(e[0], e[1] * 36e8)
 
 
 

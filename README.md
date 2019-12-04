@@ -62,12 +62,12 @@ In this example, first we create a daily time-axis of length 14 days, i.e. we ju
 along the time axis:
 
 ```python
-from axisutilities import DailyTimeAxisBuilder
+from axisutilities import DailyTimeAxis
 from datetime import date
-from_axis = DailyTimeAxisBuilder(
+from_axis = DailyTimeAxis(
     start_date=date(2019, 1, 1),
     n_interval=14
-).build()
+)
 ```
 
 **Step 2:** Create a destination Axis
@@ -76,12 +76,12 @@ Now we create a weekly time-axis of length 3, i.e. the time axis would have thre
 span of 3 weeks:
 
 ```python
-from axisutilities import WeeklyTimeAxisBuilder
+from axisutilities import WeeklyTimeAxis
 from datetime import date
-to_axis = WeeklyTimeAxisBuilder(
+to_axis = WeeklyTimeAxis(
     start_date=date(2019, 1, 1),
     n_interval=3
-).build()
+)
 ```
 
 **Step 3:** Create a `AxisConverter` object
@@ -130,17 +130,18 @@ different data sources. Their other dimensions could be completely different.
 You could easily calculate a rolling or moving average of your data. Here is an example:
 
 ```python
-from axisutilities import DailyTimeAxisBuilder, RollingWindowTimeAxisBuilder, AxisConverter
-from_axis = DailyTimeAxisBuilder(
+from axisutilities import DailyTimeAxis, RollingWindowTimeAxis, AxisConverter
+from datetime import date
+from_axis = DailyTimeAxis(
     start_date=date(2019, 1, 1),
     n_interval=14
-).build()
+)
 
-to_axis = RollingWindowTimeAxisBuilder(
+to_axis = RollingWindowTimeAxis(
     start_date=date(2019, 1, 1),
     end_date=date(2019, 1, 15),
     window_size=7
-).build()
+)
 
 tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 
@@ -157,17 +158,17 @@ time axis is shifted only one day. Yes, the intervals in the time-axis are overl
 
 ```python
 # Daily time axis spanning ten years.
-from axisutilities import DailyTimeAxisBuilder, MonthlyTimeAxisBuilder, AxisConverter
-from_axis = DailyTimeAxisBuilder(
+from axisutilities import DailyTimeAxis, MonthlyTimeAxis, AxisConverter
+from_axis = DailyTimeAxis(
     start_date=date(2010, 1, 1),
     end_date=date(2020, 1, 1)
-).build()
+)
 
 # Monthly Time Axis spanning 10 years.
-to_axis = MonthlyTimeAxisBuilder(
+to_axis = MonthlyTimeAxis(
     start_year=2010,
     end_year=2019,
-).build()
+)
 
 tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
 monthly_avg = tc.average(daily_data)
@@ -178,19 +179,20 @@ the December. If you want to control that you could pass the `start_month` and/o
 behavior:
 
 ```python
-from axisutilities import MonthlyTimeAxisBuilder
-to_axis = MonthlyTimeAxisBuilder(
+from axisutilities import MonthlyTimeAxis
+to_axis = MonthlyTimeAxis(
     start_year=2010,
     start_monnth=4,
     end_year=2019,
     end_month=10
-).build()
+)
 ```
 
 ## Min and Max
 The same way that you could calculate average, you could calculate the min and max.
 
 ```python
+from axisutilities import AxisConverter
 tc = AxisConverter(from_axis=from_axis, to_axis= to_axis)
 
 tc.min(data)
@@ -205,6 +207,7 @@ The users are able to define their own function to apply. All you need to do is 
 that you want to apply. Let's say the user is interested to calculate the standard deviation:
 
 ```python
+from axisutilities import AxisConverter
 tc = AxisConverter(from_axis=daily_axis, to_axis=monthly_axis)
 
 to_data = tc.apply_function(from_data, np.nanstd)

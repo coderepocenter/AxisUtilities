@@ -9,6 +9,7 @@ import numpy as np
 
 from axisutilities import Axis
 from axisutilities.axisbuilder import AxisBuilder, FixedIntervalAxisBuilder, RollingWindowAxisBuilder
+from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 
 
 class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
@@ -20,7 +21,6 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
     """
 
     def __init__(self, **kwargs):
-        from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
         self.second_conversion_factor = kwargs.get("second_conversion_factor", SECONDS_TO_MICROSECONDS_FACTOR)
 
     @property
@@ -35,28 +35,34 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
             raise ValueError('a positive value must be provided.')
 
     @staticmethod
-    def datetime_to_utc_timestamp(t: datetime) -> int:
+    def datetime_to_utc_timestamp(t: datetime, second_conversion=SECONDS_TO_MICROSECONDS_FACTOR) -> int:
         """
         Converts a datetime object to microseconds past January 1st, 1970. If the datetime object has time zone
         info, the time is adjusted to be UTC. However, if there are no time zone info available, it is assumed that
         the input is already in UTC.
         :param t: Must be a datetime object
+        :param second_conversion: The default output would be in microseconds. You could provide a conversion factor
+                                  to change the output unit. The conversion should be based on the second. For example,
+                                  to get the result in miliseconds, provide 1000 or to get the result in minutes,
+                                  provide (1 / 60) for this parameter.
         :return: Microseconds past January 1st, 1970.
         """
         if isinstance(t, datetime):
             base = datetime(1970, 1, 1, 0, 0, 0, 0, t.tzinfo)
             unadjusted = (t - base) // timedelta(seconds=1)
             adjustment = 0 if t.tzinfo is None else t.utcoffset().total_seconds()
-            from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
-            return int((unadjusted - adjustment) * SECONDS_TO_MICROSECONDS_FACTOR)
+            return int(round(
+                (unadjusted - adjustment) * second_conversion
+            ))
         else:
             raise TypeError("input must be of type datetime.")
 
     @staticmethod
-    def date_to_utc_timestamp(t: date) -> int:
+    def date_to_utc_timestamp(t: date, second_conversion=SECONDS_TO_MICROSECONDS_FACTOR) -> int:
         if isinstance(t, date):
-            return TimeAxisBuilder.to_utc_timestamp(
-                datetime.fromisoformat(t.isoformat())
+            return TimeAxisBuilder.datetime_to_utc_timestamp(
+                datetime.fromisoformat(t.isoformat()),
+                second_conversion
             )
         elif t is None:
             return None
@@ -64,11 +70,11 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
             raise TypeError("input must be of type date.")
 
     @staticmethod
-    def to_utc_timestamp(data_ticks: (datetime, date, str, Iterable), **kwrargs) -> (np.number, np.ndarray, None):
+    def to_utc_timestamp(data_ticks: (datetime, date, str, Iterable), second_conversion=SECONDS_TO_MICROSECONDS_FACTOR, **kwrargs) -> (np.number, np.ndarray, None):
         if isinstance(data_ticks, datetime):
-            return np.int64(TimeAxisBuilder.datetime_to_utc_timestamp(data_ticks))
+            return np.int64(TimeAxisBuilder.datetime_to_utc_timestamp(data_ticks, second_conversion))
         elif isinstance(data_ticks, date):
-            return np.int64(TimeAxisBuilder.date_to_utc_timestamp(data_ticks))
+            return np.int64(TimeAxisBuilder.date_to_utc_timestamp(data_ticks, second_conversion))
         elif isinstance(data_ticks, str):
             raise NotImplemented("")
         elif data_ticks is None:
@@ -76,7 +82,7 @@ class TimeAxisBuilder(AxisBuilder, ABC, metaclass=ABCMeta):
         elif isinstance(data_ticks, Iterable):
             return np.asarray(
                 list(
-                    map(lambda e: TimeAxisBuilder.to_utc_timestamp(e), data_ticks)
+                    map(lambda e: TimeAxisBuilder.to_utc_timestamp(e, second_conversion), data_ticks)
                 ),
                 dtype="int64"
             ).reshape((1, -1))
@@ -135,38 +141,21 @@ class BaseCommonKnownIntervals(TimeAxisBuilder, metaclass=ABCMeta):
 
     def build(self) -> Axis:
         if self.prebuild_check():
-            from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
             if (self._start_date is not None) and (self._end_date is not None):
-                start = int(round(
-                    TimeAxisBuilder.to_utc_timestamp(self._start_date)
-                    / SECONDS_TO_MICROSECONDS_FACTOR
-                    * self.second_conversion_factor
-                ))
+                start = TimeAxisBuilder.to_utc_timestamp(self._start_date, self.second_conversion_factor)
                 dt = self.get_dt()
-                end = int(round(
-                    TimeAxisBuilder.to_utc_timestamp(self._end_date)
-                    / SECONDS_TO_MICROSECONDS_FACTOR
-                    * self.second_conversion_factor
-                ))
+                end = TimeAxisBuilder.to_utc_timestamp(self._end_date, self.second_conversion_factor)
 
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
             if (self._start_date is not None) and (self._n_interval is not None):
-                start = int(round(
-                    TimeAxisBuilder.to_utc_timestamp(self._start_date)
-                    / SECONDS_TO_MICROSECONDS_FACTOR
-                    * self.second_conversion_factor
-                ))
+                start = TimeAxisBuilder.to_utc_timestamp(self._start_date, self.second_conversion_factor)
                 dt = self.get_dt()
                 end = start + self._n_interval * dt
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
 
             if (self._end_date is not None) and (self._n_interval is not None):
-                end = int(round(
-                    TimeAxisBuilder.to_utc_timestamp(self._end_date)
-                    / SECONDS_TO_MICROSECONDS_FACTOR
-                    * self.second_conversion_factor
-                ))
+                end = TimeAxisBuilder.to_utc_timestamp(self._end_date, self.second_conversion_factor)
                 dt = self.get_dt()
                 start = end - self._n_interval * dt
                 return FixedIntervalAxisBuilder(start=start, end=end, interval=dt).build()
@@ -311,7 +300,7 @@ class TimeAxisBuilderFromDataTicks(TimeAxisBuilder):
         self.set_boundary_type(boundary_type)
 
     def set_data_ticks(self, data_ticks: Iterable) -> TimeAxisBuilderFromDataTicks:
-        self._data_ticks = TimeAxisBuilder.to_utc_timestamp(data_ticks)
+        self._data_ticks = TimeAxisBuilder.to_utc_timestamp(data_ticks, self.second_conversion_factor)
         return self
 
     def set_boundary_type(self, boundary_type) -> TimeAxisBuilderFromDataTicks:
@@ -420,11 +409,11 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
         self.set_base(kwargs.get("base", int(timedelta(days=1).total_seconds()) * self.second_conversion_factor))
 
     def set_start_date(self, start_date: date) -> RollingWindowTimeAxisBuilder:
-        self._start = TimeAxisBuilder.to_utc_timestamp(start_date)
+        self._start = TimeAxisBuilder.to_utc_timestamp(start_date, self.second_conversion_factor)
         return self
 
     def set_end_date(self, end_date: date) -> RollingWindowTimeAxisBuilder:
-        self._end = TimeAxisBuilder.to_utc_timestamp(end_date)
+        self._end = TimeAxisBuilder.to_utc_timestamp(end_date, self.second_conversion_factor)
         return self
 
     def set_base(self, base: (int, timedelta)):
@@ -512,10 +501,13 @@ class MonthlyTimeAxisBuilder(TimeAxisBuilder):
             end = self._end.year * 12 + (self._end.month - 1) + 1
 
             lower_bound = TimeAxisBuilder.to_utc_timestamp(
-                [date(v // 12, (v % 12) + 1, 1) for v in range(start, end)]
+                [date(v // 12, (v % 12) + 1, 1) for v in range(start, end)],
+                self.second_conversion_factor
             ).reshape((-1, ))
+
             upper_bound = TimeAxisBuilder.to_utc_timestamp(
-                [date(v // 12, (v % 12) + 1, 1) for v in range(start + 1, end + 1)]
+                [date(v // 12, (v % 12) + 1, 1) for v in range(start + 1, end + 1)],
+                self.second_conversion_factor
             ).reshape((-1,))
 
             data_ticks = 0.5 * (lower_bound + upper_bound)
