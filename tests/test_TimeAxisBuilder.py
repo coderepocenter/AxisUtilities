@@ -716,6 +716,7 @@ class TestTimeAxisBuilderFromDataTicks(TestCase):
             (ta.data_ticks - ta.lower_bound).flatten()
         )
 
+
 class TestTimeAxisFromDataTicks(TestCase):
     def test_01(self):
         data_ticks = [datetime(2019, 1, i, 12, 0, 0) for i in range(1, 8)]
