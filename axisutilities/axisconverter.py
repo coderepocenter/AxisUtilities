@@ -171,10 +171,10 @@ class AxisConverter:
 
         if bool(kwargs.get("assure_no_bound_mismatch", True)) and \
                 (not AxisConverter._assure_no_bound_missmatch(self._from_ta, self._to_ta)):
-            raise ValueError("from- and to-axis cover a different period. Although from- and to-axis could have different "
-                             "granularity, eg. one could be daily, another weekly; however, they both must cover the same"
-                             "period in total. For example, they both must start at January 1st, and end on May 6th. "
-                             "If you want to turn this check off, pass an extra arguments, called "
+            raise ValueError("from- and to-axis cover a different period. Although from- and to-axis could have "
+                             "different granularity, eg. one could be daily, another weekly; however, they both must "
+                             "cover the same period in total. For example, they both must start at January 1st, and end"
+                             " on May 6th. If you want to turn this check off, pass an extra arguments, called "
                              "`assure_no_bound_mismatch` and set it to false")
 
     @property
