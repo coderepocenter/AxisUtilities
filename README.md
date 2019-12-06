@@ -41,8 +41,10 @@ pip install axisutilities
 You could install `AxisUtilities` using conda from `aciacs` channel as follows:
 
 ```
-conda install -c 
+conda install -c conda-forge -c aciacs axisutilities
 ```
+
+It is a good idea to create an environment for your project. in that case you could issue:
 
 ```
 conda create -c conda-forge -c aciacs your_environment_name axisutilities
