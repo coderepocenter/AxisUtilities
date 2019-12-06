@@ -10,7 +10,7 @@
     # # 3rd ^^^^
     # # 4th ++++
 
-Welcome to TimeAxis's documentation!
+Welcome to AxisUtilities' documentation!
 ====================================
 
 .. toctree::
