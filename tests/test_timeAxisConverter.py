@@ -4,7 +4,7 @@ from unittest import TestCase, skip
 import numpy as np
 import dask.array as da
 
-from axisutilities import Axis, AxisConverter, DailyTimeAxisBuilder, WeeklyTimeAxisBuilder, \
+from axisutilities import Axis, AxisRemapper, DailyTimeAxisBuilder, WeeklyTimeAxisBuilder, \
     RollingWindowTimeAxisBuilder, MonthlyTimeAxisBuilder
 
 
@@ -27,7 +27,7 @@ class TestTimeAxisConverter(TestCase):
             data_ticks=[84]
         )
 
-        row_idx, col_idx, weights = AxisConverter._get_coverage(
+        row_idx, col_idx, weights = AxisRemapper._get_coverage(
             from_axis.lower_bound, from_axis.upper_bound,
             to_axis.lower_bound, to_axis.upper_bound
         )
@@ -49,7 +49,7 @@ class TestTimeAxisConverter(TestCase):
             fraction=0.5
         )
 
-        row_idx, col_idx, coverageWeight = AxisConverter._get_coverage(
+        row_idx, col_idx, coverageWeight = AxisRemapper._get_coverage(
             from_axis.lower_bound, from_axis.upper_bound,
             to_axis.lower_bound, to_axis.upper_bound
         )
@@ -68,7 +68,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        row_idx, col_idx, weights = AxisConverter._get_coverage(
+        row_idx, col_idx, weights = AxisRemapper._get_coverage(
             from_axis.lower_bound, from_axis.upper_bound,
             to_axis.lower_bound, to_axis.upper_bound
         )
@@ -88,7 +88,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
     def test_average_01(self):
         from_axis = DailyTimeAxisBuilder()\
@@ -101,7 +101,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = [1, 2, 3, 4, 5, 6, 7]
 
@@ -120,7 +120,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = [4.0]
 
@@ -142,7 +142,7 @@ class TestTimeAxisConverter(TestCase):
             .set_end_date(date(2019, 1, 8)) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.asarray([1, 2, 3, 4, 5, 6, 7])
 
@@ -161,7 +161,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -181,7 +181,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(14) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = [4.0, 11]
 
@@ -201,7 +201,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 0)
 
@@ -230,7 +230,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14))
 
@@ -259,7 +259,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1)
 
@@ -288,7 +288,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -317,7 +317,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
 
         from_data = list(range(1, 15))
 
@@ -339,7 +339,7 @@ class TestTimeAxisConverter(TestCase):
             window_size=7
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -360,7 +360,7 @@ class TestTimeAxisConverter(TestCase):
             .set_n_interval(2) \
             .build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
         from_data[2] = np.nan
@@ -381,7 +381,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -401,7 +401,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 0).tolist()
 
@@ -429,7 +429,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -458,7 +458,7 @@ class TestTimeAxisConverter(TestCase):
             window_size=7
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -482,7 +482,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
 
         from_data = list(range(1, 15))
 
@@ -503,7 +503,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = list(range(1, 15))
 
@@ -523,7 +523,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 0).tolist()
 
@@ -551,7 +551,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -580,7 +580,7 @@ class TestTimeAxisConverter(TestCase):
             window_size=7
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.moveaxis(np.asarray(list(range(1, 15)) * 12).reshape((3, 4, 14)), 2, 1).tolist()
 
@@ -604,7 +604,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
 
         from_data = list(range(1, 15))
 
@@ -625,7 +625,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        ac = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        ac = AxisRemapper(from_axis=daily_axis, to_axis=weekly_axis)
 
         daily_data = np.random.random((3, 4, 5, 14))
 
@@ -646,7 +646,7 @@ class TestTimeAxisConverter(TestCase):
             end_year=2019
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
         from_data = np.random.random((from_axis.nelem, 100, 100))
 
@@ -677,7 +677,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        tc = AxisRemapper(from_axis=daily_axis, to_axis=weekly_axis)
 
         from_data = da.arange(14)
 
@@ -699,7 +699,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        tc = AxisRemapper(from_axis=daily_axis, to_axis=weekly_axis)
 
         from_data = da.from_array(
             np.moveaxis(np.asarray(np.arange(14).tolist()*12).reshape(3, 4, 14), 2, 0)
@@ -725,7 +725,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        tc = AxisRemapper(from_axis=daily_axis, to_axis=weekly_axis)
 
         from_data = da.from_array(
             np.asarray(np.arange(14).tolist()*12).reshape(3, 4, 14)
@@ -751,7 +751,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        tc = AxisRemapper(from_axis=daily_axis, to_axis=weekly_axis)
 
         from_data = da.from_array(
             np.moveaxis(np.asarray(np.arange(14).tolist()*12).reshape(3, 4, 14), 2, 0),
@@ -778,7 +778,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=2
         ).build()
 
-        tc = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        tc = AxisRemapper(from_axis=daily_axis, to_axis=weekly_axis)
 
         from_data = da.from_array(
             np.moveaxis(np.asarray(np.arange(14).tolist()*12).reshape(3, 4, 14), 2, 0),
@@ -805,7 +805,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
         from_data = da.arange(14, dtype='float64') 
         to_data = tc.min(from_data).compute()
         np.testing.assert_almost_equal(to_data, np.array([0.0, 7.0, np.nan]).reshape(3, 1))
@@ -821,7 +821,7 @@ class TestTimeAxisConverter(TestCase):
             n_interval=3
         ).build()
 
-        tc = AxisConverter(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
+        tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis, assure_no_bound_mismatch=False)
         from_data = da.arange(14, dtype='float64') 
         to_data = tc.max(from_data).compute()
         np.testing.assert_almost_equal(to_data, np.array([6.0, 13.0, np.nan]).reshape(3, 1))

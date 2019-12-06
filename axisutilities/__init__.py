@@ -9,6 +9,6 @@ from .timeaxisbuilders import DailyTimeAxisBuilder, WeeklyTimeAxisBuilder, TimeA
     RollingWindowTimeAxisBuilder, MonthlyTimeAxisBuilder, \
     DailyTimeAxis, WeeklyTimeAxis, TimeAxisFromDataTicks, RollingWindowTimeAxis, MonthlyTimeAxis
 
-from .axisconverter import AxisConverter
+from .axisremapper import AxisRemapper
 
 

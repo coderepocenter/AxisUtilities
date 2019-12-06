@@ -8,7 +8,6 @@
 Quick Introduction
 ==================
 
-
 What is `AxisUtilities`
 -----------------------
 `Axis Utilities` was originally developed to manages Time Axis and different operations related to time with the main
@@ -19,7 +18,7 @@ a different time axis/coordinate.
 However, similar operations could be performed on any one-dimensional axis. Let's say your data is distributed along the
 z-coordinate in certain way, and now you want to average them in a different vertical distribution. Although, your
 source axis is not time anymore, the mathematical operation that is being performed is the same. For this reason, it was
-decided to rename the package from `TimeAxis <https://github.com/maboualidev/TimeAxis>`_ to
+decided to rename the package from `TimeAxis` to
 `AxisUtilities <https://github.com/coderepocenter/AxisUtilities>`_.
 
 During the axis conversion (conversion from source axis to destination axis), for example computing the monthly mean
@@ -44,7 +43,6 @@ Just issue:
 
     pip install axisutilities
 
-
 GitHub
 ------
 You could access the project source code on GitHub available `here <https://github.com/coderepocenter/AxisUtilities>`_.
@@ -56,8 +54,8 @@ The general procedure is:
 
 1. Create a source axis, i.e. the axis that your original data is on,
 2. Create a destination axis, i.e. the axis that you want to convert your data to,
-3. Create an `AxisConverter` object by passing the source and destination axis you created previously,
-4. Finally, convert your data from the source axis to the destination axis, using the `AxisConverter` object you created
+3. Create an `AxisRemapper` object by passing the source and destination axis you created previously,
+4. Finally, convert your data from the source axis to the destination axis, using the `AxisRemapper` object you created
    in previous step.
 
 You could repeat step (4) as many time as you want, as long as the source and destination axis are the same. The true
@@ -65,8 +63,8 @@ benefit of this approach is in the reuse of the same computations, a.k.a. ***rem
 
 For some examples refer to the following examples or the API documentations.
 
-Examples:
------------
+Examples
+--------
 Daily data averaged to weekly
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 **Step 1:** Create a source Axis
@@ -76,11 +74,12 @@ along the time axis:
 
 .. code-block:: python
 
-    from_axis = DailyTimeAxisBuilder(
+    from axisutilities import DailyTimeAxis
+    from datetime import date
+    from_axis = DailyTimeAxis(
         start_date=date(2019, 1, 1),
         n_interval=14
-    ).build()
-
+    )
 
 **Step 2:** Create a destination Axis
 
@@ -89,18 +88,21 @@ span of 3 weeks:
 
 .. code-block:: python
 
-    to_axis = WeeklyTimeAxisBuilder(
+    from axisutilities import WeeklyTimeAxis
+    from datetime import date
+    to_axis = WeeklyTimeAxis(
         start_date=date(2019, 1, 1),
         n_interval=3
-    ).build()
+    )
 
-**Step 3:** Create a `AxisConverter` object
+**Step 3:** Create a `AxisRemapper` object
 
 now we create a time axis converter object, as follows:
 
 .. code-block:: python
 
-    tc = AxisConverter(
+    from axisutilities import AxisRemapper
+    tc = AxisRemapper(
         from_axis=from_axis,
         to_axis=to_axis
     )
@@ -120,7 +122,7 @@ you could define it as follows:
 
 .. code-block:: python
 
-    to_data = tc.average(from_data, time_dimension=n)
+    to_data = tc.average(from_data, dimension=n)
 
 
 where `n` is the time dimension (or source axis if the axis you have created is not time).
@@ -128,12 +130,11 @@ where `n` is the time dimension (or source axis if the axis you have created is 
 **Repeating Step 4:** as many time as needed
 
 If we have other data sources that are on the same source axis (in this case the same time axis), you could use the
-same `tc` or `AxisConverter` object that you created before to convert them to your new destination axis:
+same `tc` or `AxisRemapper` object that you created before to convert them to your new destination axis:
 
 .. code-block:: python
 
     to_data = tc.average(another_data_field)
-
 
 **NOTE:** Please do note that only the 1D axis that you are converting from needs to be the same along all these
 different data sources. Their other dimensions could be completely different.
@@ -146,6 +147,7 @@ made axis. However, in order to use the `Axis` object directly, you would need t
 data tick or element. In that case, you could create your own axis directly, using `Axis` class as follows:
 
 .. code-block:: python
+
     my_axis = Axis(lower_bound, upper_bound, binding="middle")
 
 For more information on different ways of creating axis by using `Axis` class refer to the API documentations.
@@ -171,13 +173,9 @@ Let's have a look at two-day daily axis starting from January 1st, 1970:
     )
     print("lower bound: ", my_axis.lower_bound.tolist())
     print("upper bound: ", my_axis.upper_bound.tolist())
-
-The above code would print:
-
-.. code-block:: python
-
-    lower bound:  [[0, 86400000000]]
-    upper bound:  [[86400000000, 172800000000]]
+    # Will print
+    # lower bound:  [[0, 86400000000]]
+    # upper bound:  [[86400000000, 172800000000]]
 
 You are able to change the unit by providing an extra parameter, called `second_conversion_factor`. For example, to
 convert the unit to second you could call
@@ -236,8 +234,8 @@ with the axis that is generated by one of these helper methods, just make sure t
 
 1. They have the Same Unit, (helper methods for time axis use microseconds passed from January 1st, 1970)
 2. In case of time, you need to measure from January 1st, 1970 in the unit that you have chosen above. At this point
-it is not possible to change the reference date, i.e. January 1st, 1970. May be in future releases, this option would
-be provided as well.
+   it is not possible to change the reference date, i.e. January 1st, 1970. May be in future releases, this option would
+   be provided as well.
 
 Also, notice that the reference date has nothing to do with the use of `start_date`. It is always from January 1st,
 1970. Here is an example:
@@ -264,21 +262,22 @@ You could easily calculate a rolling or moving average of your data. Here is an 
 
 .. code-block:: python
 
-    from_axis = DailyTimeAxisBuilder(
+    from axisutilities import DailyTimeAxis, RollingWindowTimeAxis, AxisRemapper
+    from datetime import date
+    from_axis = DailyTimeAxis(
         start_date=date(2019, 1, 1),
         n_interval=14
-    ).build()
+    )
 
-    to_axis = RollingWindowTimeAxisBuilder(
+    to_axis = RollingWindowTimeAxis(
         start_date=date(2019, 1, 1),
         end_date=date(2019, 1, 15),
         window_size=7
-    ).build()
+    )
 
-    tc = TimeAxisConverter(from_axis=from_axis, to_axis=to_axis)
+    tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
     to_data = tc.average(from_data)
-
 
 as you can see, the only difference is the construction og the `to_axis`. In this example,
 we are building a rolling time axis that starts on `Jan. 1st, 2019` and ends on `Jan. 15th, 2019`
@@ -288,24 +287,23 @@ time axis is shifted only one day. Yes, the intervals in the time-axis are overl
 
 Daily Averaged to Monthly
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-
 .. code-block:: python
 
     # Daily time axis spanning ten years.
-    from_axis = DailyTimeAxisBuilder(
+    from axisutilities import DailyTimeAxis, MonthlyTimeAxis, AxisRemapper
+    from_axis = DailyTimeAxis(
         start_date=date(2010, 1, 1),
         end_date=date(2020, 1, 1)
-    ).build()
+    )
 
     # Monthly Time Axis spanning 10 years.
-    to_axis = MonthlyTimeAxisBuilder(
+    to_axis = MonthlyTimeAxis(
         start_year=2010,
         end_year=2019,
-    ).build()
+    )
 
-    tc = TimeAxisConverter(from_axis=from_axis, to_axis=to_axis)
+    tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
     monthly_avg = tc.average(daily_data)
-
 
 if you do not provide any month, the start month is assumed to be the January and the end month is assumed to be
 the December. If you want to control that you could pass the `start_month` and/or `end_month` to change this
@@ -313,15 +311,61 @@ behavior:
 
 .. code-block:: python
 
-    to_axis = MonthlyTimeAxisBuilder(
+    from axisutilities import MonthlyTimeAxis
+    to_axis = MonthlyTimeAxis(
         start_year=2010,
         start_monnth=4,
         end_year=2019,
         end_month=10
-    ).build()
+    )
 
+Min and Max
+^^^^^^^^^^^
+The same way that you could calculate average, you could calculate the min and max.
 
+.. code-block:: python
 
+    from axisutilities import AxisRemapper
+    tc = AxisRemapper(from_axis=from_axis, to_axis= to_axis)
+
+    tc.min(data)
+    tc.max(data)
+
+for example, if the form axis is a daily axis, and to_axis is a monthly axis, `tc.min(data)` calculates the minimum
+daily data within the month.
+
+## User-defined functions
+The users are able to define their own function to apply. All you need to do is to pass the data along with the function
+that you want to apply. Let's say the user is interested to calculate the standard deviation:
+
+.. code-block:: python
+
+    from axisutilities import AxisRemapper
+    tc = AxisRemapper(from_axis=daily_axis, to_axis=monthly_axis)
+
+    to_data = tc.apply_function(from_data, np.nanstd)
+
+**NOTES:**
+- Pay attention that there is no parenthesis after `np.nanstd`. You need to pass the function object itself. Any thing
+that is conisdered `Callable` within Python.
+- Note that instead of passing `np.std`, we are passing the version of the function that handles the `NaN`. The
+function that you pass must handle the `NaN` and missing values properly. If you pass the regular standard deviation and
+your source data contains `NaN` your converted results would become also NaN. Also note that the function is forced
+to performed the operation along axis=0; These are the requirements.
+You could pass any function that you want:
+
+.. code-block:: python
+
+    tc = AxisRemapper(from_axis=daily_axis, to_axis=monthly_axis)
+
+    def myfunction(data):
+        return np.nansum(data, axis=0) * 42
+
+    to_data = tc.apply_function(from_data, myfunction)
+
+Again, pay attention that when passing `myfunction` there is no parenthesis and we are handling the `NaN` inside
+the function by using `np.nansum` instead of `np.sum`. Also, pay attention to the `axis=0`; The user-defined function
+must perform it's operation along this axis only.
 
 
 

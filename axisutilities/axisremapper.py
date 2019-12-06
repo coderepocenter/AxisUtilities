@@ -10,19 +10,19 @@ from scipy.sparse import csr_matrix
 from axisutilities import Axis
 
 
-class AxisConverter:
+class AxisRemapper:
     """
-    `AxisConverter` facilitates conversion between two one-dimensional axis. Originally the idea started for performing
+    `AxisRemapper` facilitates conversion between two one-dimensional axis. Originally the idea started for performing
     various conversion between time axis. For example, let's say you have a hourly data and you want to average it to
     daily data. Or you have a daily data and you want to average it to weekly, monthly, or yearly data. Or may be you
     want to calculate daily minimum and maximum from an hourly data. However, since the same concept could be applied
-    to any one-dimensional axis, the usage was generalized and the name was chaned to `AxisConverter`.
+    to any one-dimensional axis, the usage was generalized and the name was chaned to `AxisRemapper`.
 
-    `AxisConverter` caches bulk of the computations. Hence, once you create an object of the `AxisConverter` you could
+    `AxisRemapper` caches bulk of the computations. Hence, once you create an object of the `AxisRemapper` you could
     reuse it; hence, avoid re-doing certain computations, as long as the source/origin axis and the destination axis
     remain the same.
 
-    `AxisConverter` applies the calculation on multi-dimensional data as well. By default, it assumes that the axis is
+    `AxisRemapper` applies the calculation on multi-dimensional data as well. By default, it assumes that the axis is
     the first dimension. If it is not the case, you could define the axis that that the conversion needs to happen.
 
     Currently it supports calculating `average`, `minimum`, `maximum`, or any user defined function (any Python
@@ -30,9 +30,9 @@ class AxisConverter:
 
     Examples:
 
-        * Creating an `AxisConverter` and calculating average:
+        * Creating an `AxisRemapper` and calculating average:
 
-        >>> from axisutilities import AxisConverter
+        >>> from axisutilities import AxisRemapper
         >>> from axisutilities import DailyTimeAxisBuilder
         >>> from axisutilities import WeeklyTimeAxisBuilder
         >>> from datetime import date
@@ -45,9 +45,9 @@ class AxisConverter:
         ...     n_interval=2
         ... ).build()
 
-        Now we are ready to create an `AxisConverter` object:
+        Now we are ready to create an `AxisRemapper` object:
 
-        >>> ac = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        >>> ac = AxisRemapper(from_axis=daily_axis, to_axis=weekly_axis)
 
         Let's create some random data:
 
@@ -68,7 +68,7 @@ class AxisConverter:
         >>> # creating a multidimensional data
         ... daily_data = np.random.random((14, 3, 4, 5))
 
-        Now we could convert this new data using the same `AxisConverter` object that we created. No need to create
+        Now we could convert this new data using the same `AxisRemapper` object that we created. No need to create
         a new one. We could reuse it as long as the source and destination axis have not changed.
 
         >>> weekly_avg = ac.average(daily_data)
@@ -80,7 +80,7 @@ class AxisConverter:
         >>> # creating a multi-dimensional data with the axis being the last dimension
         ... daily_data = np.random.random((3, 4, 5, 14))
 
-        You could still use the same `AxisConverter`; All you need to do is to tell what dimension is the source axis:
+        You could still use the same `AxisRemapper`; All you need to do is to tell what dimension is the source axis:
 
         >>> weekly_avg = ac.average(daily_data,dimension=3)
         >>> weekly_avg.shape
@@ -101,7 +101,7 @@ class AxisConverter:
 
         * Applying a user-defined function:
 
-        >>> from axisutilities import AxisConverter
+        >>> from axisutilities import AxisRemapper
         >>> from axisutilities import DailyTimeAxisBuilder
         >>> from axisutilities import WeeklyTimeAxisBuilder
         >>> from datetime import date
@@ -117,7 +117,7 @@ class AxisConverter:
         ...     n_interval=2
         ... ).build()
         >>>
-        >>> ac = AxisConverter(from_axis=daily_axis, to_axis=weekly_axis)
+        >>> ac = AxisRemapper(from_axis=daily_axis, to_axis=weekly_axis)
         >>>
         >>> def user_defined_function(data):
         ...     return np.nansum(data, axis=0) * 42
@@ -140,9 +140,9 @@ class AxisConverter:
         ...     n_interval=3
         ... ).build()
         >>> # This will generate exception and it would fail:
-        ... # tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+        ... # tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
         ... # instead use the following:
-        ... tc = AxisConverter(
+        ... tc = AxisRemapper(
         ...     from_axis=from_axis,
         ...     to_axis=to_axis,
         ...     assure_no_bound_mismatch=False
@@ -167,10 +167,10 @@ class AxisConverter:
             self._from_ta = from_ta
             self._to_ta = to_ta
         else:
-            raise ValueError("Not enough information is provided to construct the TimeAxisConverter.")
+            raise ValueError("Not enough information is provided to construct the TimeAxisRemapper.")
 
         if bool(kwargs.get("assure_no_bound_mismatch", True)) and \
-                (not AxisConverter._assure_no_bound_missmatch(self._from_ta, self._to_ta)):
+                (not AxisRemapper._assure_no_bound_missmatch(self._from_ta, self._to_ta)):
             raise ValueError("from- and to-axis cover a different period. Although from- and to-axis could have "
                              "different granularity, eg. one could be daily, another weekly; however, they both must "
                              "cover the same period in total. For example, they both must start at January 1st, and end"
@@ -263,7 +263,7 @@ class AxisConverter:
 
     @staticmethod
     def _average(from_data: Iterable, weights: csr_matrix, dimension=0) -> np.ndarray:
-        from_data_copy, trailing_shape = AxisConverter._prep_input_data(from_data, dimension, weights.shape[1])
+        from_data_copy, trailing_shape = AxisRemapper._prep_input_data(from_data, dimension, weights.shape[1])
 
         nan_mask = np.isnan(from_data_copy)
         non_nan_mask = np.ones(from_data_copy.shape, dtype=np.int8)
@@ -272,7 +272,7 @@ class AxisConverter:
 
         inverse_sum_effective_weights = np.reciprocal(weights * non_nan_mask)
 
-        output = AxisConverter._prep_output_data(
+        output = AxisRemapper._prep_output_data(
             np.multiply(weights * from_data_copy, inverse_sum_effective_weights),
             dimension,
             trailing_shape
@@ -324,7 +324,7 @@ class AxisConverter:
 
             >>> from axisutilities import DailyTimeAxisBuilder
             >>> from axisutilities import MonthlyTimeAxisBuilder
-            >>> from axisutilities import AxisConverter
+            >>> from axisutilities import AxisRemapper
             >>> from datetime import date
             >>>
             >>> # creating a daily axis with a span of one year
@@ -339,9 +339,9 @@ class AxisConverter:
             ...     end_year=2019
             ... ).build()
             >>>
-            >>> # constructing the AxisConverter object that conversts
+            >>> # constructing the AxisRemapper object that conversts
             ... # from the daily axis to the monthly axis.
-            ... ac = AxisConverter(from_axis=daily_axis, to_axis=monthly_axis)
+            ... ac = AxisRemapper(from_axis=daily_axis, to_axis=monthly_axis)
             >>>
             >>> # creating some random data points
             ... from numpy.random import random
@@ -377,7 +377,7 @@ class AxisConverter:
             0.0
 
         """
-        data_copy, trailing_shape = AxisConverter._prep_input_data(data, dimension, weights.shape[1])
+        data_copy, trailing_shape = AxisRemapper._prep_input_data(data, dimension, weights.shape[1])
 
         if isinstance(func2apply, Callable):
             import warnings
@@ -391,7 +391,7 @@ class AxisConverter:
         else:
             raise TypeError("func2apply must be a callable object that performs the calculation on axis=0.")
 
-        return AxisConverter._prep_output_data(
+        return AxisRemapper._prep_output_data(
             output,
             dimension,
             trailing_shape
@@ -415,7 +415,7 @@ class AxisConverter:
 
     @staticmethod
     def _get_coverage_csr_matrix(from_ta: Axis, to_ta: Axis) -> csr_matrix:
-        row_idx, col_idx, weights = AxisConverter._get_coverage(
+        row_idx, col_idx, weights = AxisRemapper._get_coverage(
             from_ta.lower_bound, from_ta.upper_bound,
             to_ta.lower_bound, to_ta.upper_bound
         )

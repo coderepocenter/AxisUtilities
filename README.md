@@ -42,8 +42,8 @@ The general procedure is:
 
 1. Create a source axis, i.e. the axis that your original data is on,
 2. Create a destination axis, i.e. the axis that you want to convert your data to,
-3. Create an `AxisConverter` object by passing the source and destination axis you created previously,
-4. Finally, convert your data from the source axis to the destination axis, using the `AxisConverter` object you created
+3. Create an `AxisRemapper` object by passing the source and destination axis you created previously,
+4. Finally, convert your data from the source axis to the destination axis, using the `AxisRemapper` object you created
 in previous step.
 
 You could repeat step (4) as many time as you want, as long as the source and destination axis are the same. The true
@@ -84,13 +84,13 @@ to_axis = WeeklyTimeAxis(
 )
 ```
 
-**Step 3:** Create a `AxisConverter` object
+**Step 3:** Create a `AxisRemapper` object
 
 now we create a time axis converter object, as follows:
 
 ```python
-from axisutilities import AxisConverter
-tc = AxisConverter(
+from axisutilities import AxisRemapper
+tc = AxisRemapper(
     from_axis=from_axis, 
     to_axis=to_axis
 )
@@ -117,7 +117,7 @@ where `n` is the time dimension (or source axis if the axis you have created is 
 **Repeating Step 4:** as many time as needed
 
 If we have other data sources that are on the same source axis (in this case the same time axis), you could use the 
-same `tc` or `AxisConverter` object that you created before to convert them to your new destination axis:
+same `tc` or `AxisRemapper` object that you created before to convert them to your new destination axis:
 
 ```python
 to_data = tc.average(another_data_field)
@@ -248,7 +248,7 @@ print("upper bound: ", my_axis.upper_bound.tolist())
 You could easily calculate a rolling or moving average of your data. Here is an example:
 
 ```python
-from axisutilities import DailyTimeAxis, RollingWindowTimeAxis, AxisConverter
+from axisutilities import DailyTimeAxis, RollingWindowTimeAxis, AxisRemapper
 from datetime import date
 from_axis = DailyTimeAxis(
     start_date=date(2019, 1, 1),
@@ -261,7 +261,7 @@ to_axis = RollingWindowTimeAxis(
     window_size=7
 )
 
-tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 
 to_data = tc.average(from_data)
 ```
@@ -276,7 +276,7 @@ time axis is shifted only one day. Yes, the intervals in the time-axis are overl
 
 ```python
 # Daily time axis spanning ten years.
-from axisutilities import DailyTimeAxis, MonthlyTimeAxis, AxisConverter
+from axisutilities import DailyTimeAxis, MonthlyTimeAxis, AxisRemapper
 from_axis = DailyTimeAxis(
     start_date=date(2010, 1, 1),
     end_date=date(2020, 1, 1)
@@ -288,7 +288,7 @@ to_axis = MonthlyTimeAxis(
     end_year=2019,
 )
 
-tc = AxisConverter(from_axis=from_axis, to_axis=to_axis)
+tc = AxisRemapper(from_axis=from_axis, to_axis=to_axis)
 monthly_avg = tc.average(daily_data)
 ```
 
@@ -310,8 +310,8 @@ to_axis = MonthlyTimeAxis(
 The same way that you could calculate average, you could calculate the min and max.
 
 ```python
-from axisutilities import AxisConverter
-tc = AxisConverter(from_axis=from_axis, to_axis= to_axis)
+from axisutilities import AxisRemapper
+tc = AxisRemapper(from_axis=from_axis, to_axis= to_axis)
 
 tc.min(data)
 tc.max(data)
@@ -325,8 +325,8 @@ The users are able to define their own function to apply. All you need to do is 
 that you want to apply. Let's say the user is interested to calculate the standard deviation:
 
 ```python
-from axisutilities import AxisConverter
-tc = AxisConverter(from_axis=daily_axis, to_axis=monthly_axis)
+from axisutilities import AxisRemapper
+tc = AxisRemapper(from_axis=daily_axis, to_axis=monthly_axis)
 
 to_data = tc.apply_function(from_data, np.nanstd)
 ```
@@ -340,7 +340,7 @@ to performed the operation along axis=0; These are the requirements.
 You could pass any function that you want:
 
 ```python
-tc = AxisConverter(from_axis=daily_axis, to_axis=monthly_axis)
+tc = AxisRemapper(from_axis=daily_axis, to_axis=monthly_axis)
 
 def myfunction(data):
     return np.nansum(data, axis=0) * 42

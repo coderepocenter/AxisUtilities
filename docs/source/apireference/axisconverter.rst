@@ -1,6 +1,6 @@
 Axis Converter
 --------------
 
-AxisConverter
+AxisRemapper
 ^^^^^^^^^^^^^
-.. autoclass:: axisutilities.AxisConverter
+.. autoclass:: axisutilities.AxisRemapper
