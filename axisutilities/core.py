@@ -94,7 +94,7 @@ class Axis:
     or in this example: `2019-11-02 00:00:00`. The data tick defines where in the interval are you associating the
     value. In some calculations this data tick is needed.
 
-    There are multiple way of creating an axis:
+    There are multiple way of creating an axis: (Check the help on `Axis.__init__` for further instruction.)
 
     - Using Axis Object directly, or
     - Using one of the builder functions that are provided. These builder functions provide an easier way to create
