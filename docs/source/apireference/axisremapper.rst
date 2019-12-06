@@ -1,5 +1,5 @@
-Axis Converter
---------------
+Axis Remapper
+-------------
 
 AxisRemapper
 ^^^^^^^^^^^^^

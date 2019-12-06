@@ -7,4 +7,4 @@ API Reference
 
     axisbuilders
 
-    axisconverter
+    axisremapper
