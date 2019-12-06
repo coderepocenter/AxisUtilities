@@ -37,6 +37,17 @@ As usual, you could use `pip` installation as follows:
 pip install axisutilities
 ```
 
+## using conda
+You could install `AxisUtilities` using conda from `aciacs` channel as follows:
+
+```
+conda install -c 
+```
+
+```
+conda create -c conda-forge -c aciacs your_environment_name axisutilities
+```
+
 # How to use `AxisUtilities`?
 The general procedure is:
 
