@@ -1,0 +1,3 @@
+conda build -c conda-forge .
+
+anaconda upload -u aciacs /Users/mabouali/miniconda3/conda-bld/noarch/axisutilities-19.12.6.36596-pyh39e3cac_0.tar.bz
