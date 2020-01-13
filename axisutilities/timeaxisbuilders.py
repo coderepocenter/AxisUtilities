@@ -418,7 +418,7 @@ class RollingWindowTimeAxisBuilder(TimeAxisBuilder, RollingWindowAxisBuilder):
 
     def set_base(self, base: (int, timedelta)):
         if isinstance(base, timedelta):
-            self._base = timedelta.total_seconds() * self.second_conversion_factor
+            self._base = base.total_seconds() * self.second_conversion_factor
         else:
             try:
                 super().set_base(base)

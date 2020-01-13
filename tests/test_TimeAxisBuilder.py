@@ -473,6 +473,14 @@ class TestRollingWindowTimeAxis(TestCase):
         self.assertTrue(np.all((data_ticks - lower_bound) == 3.5 * 24 * 3600 * 1e6))
         self.assertTrue(np.all((upper_bound - data_ticks) == 3.5 * 24 * 3600 * 1e6))
 
+    def test_02(self):
+        ta = RollingWindowTimeAxis(
+            start_date=date(2020, 1, 1),
+            end_date=date(2020, 1, 15),
+            base=timedelta(days=1),
+            window_size=7
+        )
+
     def test_different_unit_01(self):
         ta_ms = RollingWindowTimeAxis(
             start_date=date(2019, 1, 1),
