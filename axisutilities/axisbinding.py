@@ -33,7 +33,7 @@ class AxisBinding(Enum):
         if isinstance(v, str):
             possibleCases = {
                 "beginning": AxisBinding.BEGINNING,
-                "lef": AxisBinding.BEGINNING,
+                "left": AxisBinding.BEGINNING,
                 "end": AxisBinding.END,
                 "right": AxisBinding.END,
                 "middle": AxisBinding.MIDDLE,

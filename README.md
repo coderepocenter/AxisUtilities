@@ -47,7 +47,7 @@ conda install -c conda-forge -c aciacs axisutilities
 It is a good idea to create an environment for your project. in that case you could issue:
 
 ```
-conda create -c conda-forge -c aciacs your_environment_name axisutilities
+conda create -c conda-forge -c aciacs --name your_environment_name axisutilities
 ```
 
 # How to use `AxisUtilities`?
