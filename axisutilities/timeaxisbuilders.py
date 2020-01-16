@@ -523,4 +523,46 @@ def MonthlyTimeAxis(**kwargs) -> Axis:
     return MonthlyTimeAxisBuilder(**kwargs).build()
 
 
+class YearlyTimeAxisBuilder(TimeAxisBuilder):
+    """
+    Creates a yearly time axis by provided start and end year.
+
+    """
+
+    def __init__(self, start_year: int, end_year: int, **kwargs):
+        super().__init__(**kwargs)
+
+        self._start_year = int(start_year)
+        self._end_year = int(end_year)
+
+    def prebuild_check(self) -> (bool, Exception):
+        if (self._start_year < self._end_year):
+            return True
+        else:
+            raise ValueError("start year must be smaller than end year")
+
+    def build(self) -> Axis:
+        if self.prebuild_check():
+            bounds = TimeAxisBuilder.to_utc_timestamp(
+                [date(year, 1, 1) for year in range(self._start_year, self._end_year+1)],
+                self.second_conversion_factor
+            ).reshape((-1,))
+
+            lower_bound = bounds[:-1]
+            upper_bound = bounds[1:]
+            data_ticks = 0.5 * (lower_bound + upper_bound)
+
+            return Axis(
+                lower_bound=lower_bound,
+                upper_bound=upper_bound,
+                data_ticks=data_ticks
+            )
+
+
+def YearlyTimeAxis(**kwargs) -> Axis:
+    return YearlyTimeAxisBuilder(**kwargs).build()
+
+
+
+
 

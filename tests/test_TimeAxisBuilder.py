@@ -7,7 +7,7 @@ from axisutilities import Axis, WeeklyTimeAxisBuilder, RollingWindowTimeAxisBuil
     TimeAxisBuilderFromDataTicks, DailyTimeAxisBuilder, FixedIntervalAxisBuilder, DailyTimeAxis
 from axisutilities.constants import SECONDS_TO_MICROSECONDS_FACTOR
 from axisutilities.timeaxisbuilders import TimeAxisBuilder, WeeklyTimeAxis, RollingWindowTimeAxis, MonthlyTimeAxis, \
-    TimeAxisFromDataTicks
+    TimeAxisFromDataTicks, YearlyTimeAxis
 
 
 class TestTimeAxisBuilder(TestCase):
@@ -702,6 +702,24 @@ class TestMonthlyTimeAxis(TestCase):
 
         for e in zip(ta_ms.data_ticks.flatten().tolist(), ta_h.data_ticks.flatten().tolist()):
             self.assertEqual(e[0], e[1] * 36e8)
+
+
+class TestYearlyTimeAxis(TestCase):
+    def test_01(self):
+        with self.assertRaises(ValueError):
+            YearlyTimeAxis(start_year=2020, end_year=2020)
+
+    def test_02(self):
+        with self.assertRaises(ValueError):
+            YearlyTimeAxis(start_year=2020, end_year=1920)
+
+    def test_03(self):
+        with self.assertRaises(ValueError):
+            YearlyTimeAxis(end_year=1920, start_year=2020)
+
+    def test_04(self):
+        yearly_axis = YearlyTimeAxis(start_year=1980, end_year=1984)
+        self.assertEqual(4, yearly_axis.nelem)
 
 
 class TestTimeAxisBuilderFromDataTicks(TestCase):
